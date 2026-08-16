@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizForge Pro | Animated MCQ Manager & Quiz Engine</title>
+    <!-- Resource Preconnect for Instant CDN Loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Tailwind CSS for Responsive Layouts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library for Visual Celebrations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.4/confetti.min.js" defer></script>
+    <!-- html2canvas for Performance Card Export as Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .animated-gradient-text {
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradientShift 6s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .pulse-timer {
+            animation: pulseTimer 1s infinite alternate;
+        }
+
+        @keyframes pulseTimer {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(1.05); opacity: 0.85; }
+        }
+
+        .option-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            border-color: #6366f1;
+        }
+
+        /* Animated Performance Card Entry */
+        .card-pop-in {
+            animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Styles for Embed Upload Button */
+        .download-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .download-button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="w-full glass-panel sticky top-0 z-40 border-b border-slate-800 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="AppRouter.navigate('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-white text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight animated-gradient-text">QuizForge</span>
+                    <span class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-2 py-0.5 rounded-full ml-1 border border-indigo-500/30">PRO</span>
+                </div>
+            </div>
+
+            <div id="navRightControls" class="flex items-center space-x-2">
+                <!-- Dynamic Content injected by JS -->
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 max-w-sm pointer-events-none"></div>
+
+    <!-- MAIN ROUTER CONTAINER -->
+    <main id="mainApp" class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+
+        <!-- ================= VIEW 1: LANDING CHOICE ================= -->
+        <section id="viewHome" class="app-view hidden py-8">
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <h1 class="text-4xl md:text-6xl font-black mb-4 tracking-tight leading-tight">
+                    Interactive Quizzing <br><span class="animated-gradient-text">Made Secure &amp; Seamless</span>
+                </h1>
+                <p class="text-slate-400 text-lg md:text-xl">
+                    Create protected offline-first quizzes with encrypted configurations, or launch student assessments with precise timing and proctoring controls.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Student Portal Card -->
+                <div onclick="AppRouter.navigate('student-setup')" class="glass-panel p-8 rounded-3xl border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 cursor-pointer group flex flex-col justify-between hover:shadow-2xl hover:shadow-indigo-500/10">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-3xl mb-6 group-hover:scale-110 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">Student Portal</h2>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                            Enter your details, load an encrypted quiz file provided by your teacher, and begin your strictly proctored test.
+                        </p>
+                    </div>
+                    <div class="flex items-center text-indigo-400 font-semibold group-hover:translate-x-2 transition-transform">
+                        <span>Take a Quiz</span>
+                        <i class="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Admin / Author Card -->
+                <div onclick="AppRouter.navigate('admin-login')" class="glass-panel p-8 rounded-3xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 cursor-pointer group flex flex-col justify-between hover:shadow-2xl hover:shadow-purple-500/10">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-3xl mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">Teacher / Admin</h2>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                            Authenticate with dynamic time-based PINs, paste/edit bulk questions, configure retry attempts, and export AES-encrypted quiz payloads.
+                        </p>
+                    </div>
+                    <div class="flex items-center text-purple-400 font-semibold group-hover:translate-x-2 transition-transform">
+                        <span>Open Question Manager</span>
+                        <i class="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: ADMIN LOGIN ================= -->
+        <section id="viewAdminLogin" class="app-view hidden max-w-md mx-auto w-full py-8">
+            <div class="glass-panel p-8 rounded-3xl border border-slate-700 shadow-2xl relative overflow-hidden">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-tr from-purple-500 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl text-white shadow-lg mb-4">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h2 class="text-2xl font-extrabold">Admin Authentication</h2>
+                    <p class="text-slate-400 text-xs mt-1">Enter 24-hour clock dynamic system verification key (HHMM) to proceed.</p>
+                </div>
+
+                <form id="adminLoginForm" onsubmit="AdminAuthModule.handleLogin(event)" class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">4-Digit Security PIN (24-Hour Clock)</label>
+                        <div class="relative">
+                            <input type="password" id="adminPinInput" maxlength="4" placeholder="••••" required class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3.5 text-center text-2xl font-mono tracking-widest text-white focus:outline-none focus:border-purple-500 transition-colors">
+                            <i class="fa-solid fa-key absolute right-4 top-4 text-slate-500"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2">
+                        <span>Authenticate Portal</span>
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <button onclick="AppRouter.navigate('home')" class="text-xs text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Return to Main Menu
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: ADMIN DASHBOARD ================= -->
+        <section id="viewAdminDashboard" class="app-view hidden space-y-6 py-4">
+            <div class="glass-panel p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center">
+                        <i class="fa-solid fa-sliders text-purple-400 mr-3"></i>Quiz Management Console
+                    </h2>
+                    <p class="text-slate-400 text-xs mt-1">Parse, edit, configure, and export encrypted quiz payloads.</p>
+                </div>
+                <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                    <button onclick="document.getElementById('adminQuizFileInput').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-file-import"></i>
+                        <span>Import Protected JSON</span>
+                    </button>
+                    <input type="file" id="adminQuizFileInput" accept=".json" class="hidden" onchange="AdminManagerModule.handleImportQuiz(event)">
+                    
+                    <button onclick="AdminManagerModule.exportQuiz()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Export Protected JSON</span>
+                    </button>
+                    <button onclick="AdminAuthModule.logout()" class="bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Column: Settings & Bulk Input -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="glass-panel p-6 rounded-3xl space-y-4">
+                        <h3 class="text-lg font-bold text-indigo-300 border-b border-slate-800 pb-3 flex items-center">
+                            <i class="fa-solid fa-gears mr-2"></i>Global Quiz Settings
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Quiz Title</label>
+                                <input type="text" id="cfgQuizTitle" value="General Knowledge Assessment" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">Subject</label>
+                                    <input type="text" id="cfgSubject" value="General Science" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">Target Class</label>
+                                    <select id="cfgClass" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="ALL">All Classes</option>
+                                        <option value="Class V">Class V</option>
+                                        <option value="Class VI">Class VI</option>
+                                        <option value="Class VII">Class VII</option>
+                                        <option value="Class VIII">Class VIII</option>
+                                        <option value="Class IX">Class IX</option>
+                                        <option value="Class X" selected>Class X</option>
+                                        <option value="Class XI">Class XI</option>
+                                        <option value="Class XII">Class XII</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 pt-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1" title="For Standard Mode">Standard (Min)</label>
+                                    <input type="number" id="cfgStdDuration" value="10" min="1" max="180" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1" title="For Time-Based Mode">Per Q (Sec)</label>
+                                    <input type="number" id="cfgTimePerQ" value="15" min="5" max="300" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">Max Attempts</label>
+                                    <input type="number" id="cfgMaxAttempts" value="3" min="1" max="10" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-3xl space-y-4">
+                        <h3 class="text-lg font-bold text-purple-300 border-b border-slate-800 pb-3 flex items-center justify-between">
+                            <span><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Bulk Question Parser</span>
+                            <span class="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/30">Auto Detect</span>
+                        </h3>
+
+                        <textarea id="bulkInputArea" rows="8" placeholder="Paste questions in formats like:
+1. What is the capital of India? A. New Delhi B. Mumbai C. Kolkata D. Chennai
+
+Q2) Which gas do plants absorb? (a) Oxygen (b) Carbon Dioxide (c) Nitrogen (d) Helium" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500 leading-relaxed"></textarea>
+
+                        <div class="flex justify-between items-center gap-2">
+                            <button onclick="AdminManagerModule.parseBulkText()" class="w-full bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition-all shadow-md shadow-purple-600/20">
+                                <i class="fa-solid fa-bolt mr-1.5"></i>Parse &amp; Append Questions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Question Authoring List -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <h3 class="text-lg font-bold text-slate-200 flex items-center">
+                            <i class="fa-solid fa-list-check mr-2 text-indigo-400"></i>
+                            Questions List (<span id="qCountBadge">0</span>)
+                        </h3>
+                        <div class="flex space-x-2 flex-wrap gap-y-1">
+                            <button onclick="AdminManagerModule.shuffleQuestions()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md">
+                                <i class="fa-solid fa-shuffle mr-1"></i> Shuffle Questions
+                            </button>
+                            <button onclick="AdminManagerModule.addNewQuestion()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Manual Question
+                            </button>
+                            <button onclick="AdminManagerModule.clearAllQuestions()" class="bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 border border-slate-700 text-slate-400 text-xs font-bold px-3 py-2 rounded-xl transition-all">
+                                <i class="fa-solid fa-trash mr-1"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="adminQuestionsList" class="space-y-4 max-h-[700px] overflow-y-auto pr-1">
+                        <!-- Questions injected dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: STUDENT SETUP WORKFLOW ================= -->
+        <section id="viewStudentSetup" class="app-view hidden max-w-xl mx-auto w-full py-6">
+            <div class="glass-panel p-6 md:p-8 rounded-3xl border border-slate-700 shadow-2xl space-y-6">
+                <div class="text-center">
+                    <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Student Portal</span>
+                    <h2 class="text-2xl font-extrabold mt-1">Quiz Registration &amp; File Setup</h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="space-y-4 bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Step 1: Student Full Name</label>
+                            <input type="text" id="studentNameInput" placeholder="e.g., Rahul Das or রাহুল দাস" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                            <p class="text-[11px] text-slate-500 mt-1">Supports English and Unicode standard scripts.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Step 2: Select Class</label>
+                            <select id="studentClassSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                                <option value="" disabled selected>-- Select Your Class --</option>
+                                <option value="Class V">Class V</option>
+                                <option value="Class VI">Class VI</option>
+                                <option value="Class VII">Class VII</option>
+                                <option value="Class VIII">Class VIII</option>
+                                <option value="Class IX">Class IX</option>
+                                <option value="Class X">Class X</option>
+                                <option value="Class XI">Class XI</option>
+                                <option value="Class XII">Class XII</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Step 3: Upload Protected Quiz (.json)</label>
+                            <button type="button" onclick="StudentQuizModule.handleEmbedFetch()" class="download-button"><i class="fa-solid fa-cloud-arrow-down mr-1.5"></i>Upload QUIZ</button>
+                        </div>
+                        <div class="relative border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center transition-colors cursor-pointer" onclick="document.getElementById('quizFileInput').click()">
+                            <input type="file" id="quizFileInput" accept=".json" class="hidden" onchange="StudentQuizModule.handleFileUpload(event)">
+                            <i class="fa-solid fa-file-shield text-3xl text-indigo-400 mb-2"></i>
+                            <p class="text-xs text-slate-300 font-semibold">Click or Drag &amp; Drop Encrypted Quiz File</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Accepts authenticated AES-GCM protected JSON payloads.</p>
+                        </div>
+                        <div id="fileUploadStatus" class="hidden text-xs p-3 rounded-xl border flex items-center space-x-2"></div>
+                    </div>
+
+                    <div id="modeSelectionCard" class="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 space-y-3 opacity-50 pointer-events-none transition-all">
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Step 4: Select Mode</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="border border-slate-700 bg-slate-900/80 rounded-xl p-3 flex items-center space-x-3 cursor-pointer hover:border-indigo-500 transition-all">
+                                <input type="radio" name="quizModeChoice" value="STANDARD" checked class="text-indigo-600 focus:ring-0">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-200">Standard MCQ</div>
+                                    <div class="text-[10px] text-slate-400" id="stdModeDesc">Global countdown for full quiz.</div>
+                                </div>
+                            </label>
+                            <label class="border border-slate-700 bg-slate-900/80 rounded-xl p-3 flex items-center space-x-3 cursor-pointer hover:border-indigo-500 transition-all">
+                                <input type="radio" name="quizModeChoice" value="TIME_BASED" class="text-indigo-600 focus:ring-0">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-200">Time-Based MCQ</div>
+                                    <div class="text-[10px] text-slate-400" id="timeModeDesc">Per-question countdown timer.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="btnProceedToStart" onclick="StudentQuizModule.confirmAndReady()" disabled class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 opacity-50 cursor-not-allowed hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2">
+                        <span>Review &amp; Launch Quiz</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 5: QUIZ CONFIRMATION MODAL ================= -->
+        <div id="modalConfirmation" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+            <div class="glass-panel border border-slate-700 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-6">
+                <div class="text-center">
+                    <div class="w-12 h-12 bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 rounded-2xl mx-auto flex items-center justify-center text-xl mb-2">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <h3 class="text-xl font-extrabold text-white">Quiz Details Confirmation</h3>
+                    <p class="text-xs text-slate-400 mt-1">Please double check your parameters before beginning.</p>
+                </div>
+
+                <div class="bg-rose-950/30 border border-rose-500/30 p-3 rounded-xl text-[11px] text-rose-300 flex items-start space-x-2">
+                    <i class="fa-solid fa-shield-cat text-sm mt-0.5"></i>
+                    <span><strong>Proctoring Notice:</strong> Navigating away from this tab, minimizing the browser, or switching windows will automatically terminate your test immediately.</span>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-2xl p-4 border border-slate-800 space-y-2 text-xs">
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Student Name:</span>
+                        <span id="confirmStudentName" class="font-bold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Class:</span>
+                        <span id="confirmStudentClass" class="font-bold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Quiz Title:</span>
+                        <span id="confirmQuizTitle" class="font-bold text-indigo-300"></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Total Questions:</span>
+                        <span id="confirmQCount" class="font-bold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Quiz Mode:</span>
+                        <span id="confirmQuizMode" class="font-bold text-purple-300"></span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800">
+                        <span class="text-slate-400">Timing Rule:</span>
+                        <span id="confirmTimingRule" class="font-bold text-amber-300"></span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Max Allowed Attempts:</span>
+                        <span id="confirmMaxAttempts" class="font-bold text-emerald-300"></span>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="StudentQuizModule.closeConfirmationModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-3 rounded-xl transition-all">
+                        Cancel
+                    </button>
+                    <button onclick="StudentQuizModule.startQuizExecution()" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-1">
+                        <span>Begin Now</span>
+                        <i class="fa-solid fa-play text-xs ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 6: LIVE ACTIVE QUIZ INTERFACE ================= -->
+        <section id="viewLiveQuiz" class="app-view hidden max-w-3xl mx-auto w-full py-4 space-y-6">
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between border border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-500/30" id="quizProgressBadge">
+                        Question 1 of 10
+                    </span>
+                    <span class="text-xs font-semibold text-slate-400 hidden sm:inline" id="quizModeIndicatorLabel">
+                        Standard Mode
+                    </span>
+                </div>
+
+                <div class="flex items-center space-x-2 bg-slate-900/90 border border-slate-700 px-4 py-1.5 rounded-xl">
+                    <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
+                    <span class="text-xs font-semibold text-slate-400">TIME LEFT:</span>
+                    <span id="liveQuizTimer" class="font-mono text-base font-bold text-amber-400">00:00</span>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 md:p-8 rounded-3xl border border-slate-700/80 shadow-2xl space-y-6 relative">
+                <div>
+                    <h3 id="activeQuestionText" class="text-lg md:text-xl font-bold text-slate-100 leading-snug">
+                        Question text goes here...
+                    </h3>
+                </div>
+
+                <div id="activeOptionsContainer" class="space-y-3">
+                    <!-- Options injected dynamically -->
+                </div>
+
+                <div id="answerFeedbackBanner" class="hidden p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between">
+                    <div id="feedbackText" class="flex items-center space-x-2"></div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button id="btnSubmitOrNext" onclick="QuizEngineModule.handleNextClick()" disabled class="bg-indigo-600 hover:bg-indigo-500 opacity-50 cursor-not-allowed text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center space-x-2">
+                        <span id="btnSubmitOrNextText">Submit Answer</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 7: ATTEMPT RESULT & RETRY MODAL ================= -->
+        <div id="modalAttemptResult" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+            <div class="glass-panel border border-slate-700 max-w-lg w-full rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 relative overflow-hidden my-8 max-h-[90vh] overflow-y-auto">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center text-3xl text-white shadow-xl mb-3">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <h3 class="text-2xl font-extrabold text-white" id="resHeaderTitle">Attempt Completed!</h3>
+                    <p class="text-xs text-slate-400 mt-1" id="resHeaderSub">Performance summary for this attempt.</p>
+                </div>
+
+                <div class="bg-gradient-to-r from-indigo-950/60 to-purple-950/60 border border-indigo-500/30 rounded-2xl p-4 text-center">
+                    <div class="text-3xl font-black animated-gradient-text" id="resScoreText">0 / 0</div>
+                    <div class="text-xs font-bold text-slate-300 mt-1" id="resPercentageText">Percentage: 0%</div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+                        <div class="font-bold text-emerald-400 text-lg" id="resCorrectCount">0</div>
+                        <div class="text-slate-400 text-[10px]">Correct</div>
+                    </div>
+                    <div class="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl">
+                        <div class="font-bold text-rose-400 text-lg" id="resWrongCount">0</div>
+                        <div class="text-slate-400 text-[10px]">Wrong</div>
+                    </div>
+                    <div class="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                        <div class="font-bold text-amber-400 text-lg" id="resUnansweredCount">0</div>
+                        <div class="text-slate-400 text-[10px]">Unanswered</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-800 space-y-1 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Student:</span>
+                        <span id="resStudentInfo" class="font-bold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Current Attempt:</span>
+                        <span id="resAttemptTracker" class="font-bold text-indigo-300"></span>
+                    </div>
+                </div>
+
+                <!-- Retry Options (Shown if attempts remaining) -->
+                <div id="retryOptionsBox" class="space-y-3 pt-2">
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider text-center">Choose Retry Strategy</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button onclick="QuizEngineModule.executeRetry('ALL')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold p-3 rounded-xl transition-all text-left">
+                            <div class="text-indigo-300"><i class="fa-solid fa-rotate-left mr-1"></i> Start From Beginning</div>
+                            <div class="text-[10px] text-slate-400 font-normal mt-0.5">Restarts the complete question set.</div>
+                        </button>
+                        <button id="btnRetryWrongOnly" onclick="QuizEngineModule.executeRetry('WRONG_ONLY')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold p-3 rounded-xl transition-all text-left">
+                            <div class="text-purple-300"><i class="fa-solid fa-filter mr-1"></i> Retry Wrong Only</div>
+                            <div class="text-[10px] text-slate-400 font-normal mt-0.5">Loads only wrong/unanswered questions.</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Final All-Attempts Completed Box -->
+                <div id="finalCompletedBox" class="hidden space-y-4 pt-2">
+                    <div id="attemptCompletionBanner" class="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-xl text-xs font-bold text-center">
+                        <i class="fa-solid fa-circle-check mr-1"></i> All attempts have been completed.
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-chart-line text-indigo-400 mr-1.5"></i> All Attempts Summary
+                        </h4>
+                        <div id="allAttemptsHistoryContainer" class="space-y-2 text-xs max-h-40 overflow-y-auto pr-1">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <button onclick="QuizEngineModule.openOverallPerformanceCard()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>View Overall Performance Card</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW 8: ANIMATED OVERALL PERFORMANCE CARD MODAL ================= -->
+        <div id="modalPerformanceCard" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+            <div class="max-w-lg w-full flex flex-col items-center space-y-4 my-6">
+                
+                <!-- Renderable Image Target Container -->
+                <div id="downloadablePerformanceCard" class="card-pop-in w-full bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-500/40 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 text-white relative overflow-hidden">
+                    
+                    <!-- Decorative Background Overlay -->
+                    <div class="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- Header -->
+                    <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                        <div>
+                            <div class="text-xs font-extrabold tracking-widest text-indigo-400 uppercase">Official Certificate of Score</div>
+                            <h2 id="cardQuizTitle" class="text-xl font-extrabold text-white mt-0.5">Quiz Title Here</h2>
+                            <p id="cardSubjectClass" class="text-xs text-slate-400">Subject | Class</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center text-xl shadow-lg">
+                            <i class="fa-solid fa-award text-white"></i>
+                        </div>
+                    </div>
+
+                    <!-- Student Info Box -->
+                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Candidate Name</span>
+                            <span id="cardStudentName" class="font-extrabold text-slate-100 text-sm">Student Name</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Completion Date</span>
+                            <span id="cardIssueDate" class="font-semibold text-slate-300">YYYY-MM-DD</span>
+                        </div>
+                    </div>
+
+                    <!-- Highlight Performance Badge -->
+                    <div class="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-2xl p-6 text-center space-y-2">
+                        <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Overall Quiz Score</div>
+                        <div id="cardOverallPercentage" class="text-5xl font-black animated-gradient-text tracking-tight">0%</div>
+                        <div id="cardBadgeStatus" class="inline-block text-xs font-bold px-3 py-1 rounded-full border">
+                            Grade
+                        </div>
+                    </div>
+
+                    <!-- Details Metric Breakdown Grid -->
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Best Attempt Score</span>
+                            <span id="cardBestScore" class="font-bold text-emerald-400 text-sm">0 / 0</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Total Attempts Used</span>
+                            <span id="cardTotalAttempts" class="font-bold text-indigo-300 text-sm">0 / 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Footer Stamp -->
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 pt-2 border-t border-slate-800/80">
+                        <span>QuizForge Pro Authenticated Engine</span>
+                        <span>Verified Digital Result</span>
+                    </div>
+                </div>
+
+                <!-- Action Toolbar Below Card -->
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full">
+                    <button onclick="QuizEngineModule.downloadPerformanceCardImage()" class="w-full sm:w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-file-image"></i>
+                        <span>Download as Image</span>
+                    </button>
+                    <button onclick="QuizEngineModule.closePerformanceCardModal()" class="w-full sm:w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold py-3 rounded-xl border border-slate-700 transition-all">
+                        Close &amp; Exit Portal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="w-full glass-panel border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>QuizForge Pro Engine &copy; 2026. AES-GCM Encrypted Client-Side Application.</div>
+            <div class="flex space-x-4">
+                <span class="hover:text-slate-400 cursor-pointer" onclick="AppRouter.showSecurityNotice()">Security Disclaimer</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SECURITY DISCLAIMER MODAL -->
+    <div id="modalSecurityNotice" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-bold text-slate-100 flex items-center">
+                <i class="fa-solid fa-shield-halved text-indigo-400 mr-2"></i> Client-Side Architecture Security Notice
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                QuizForge Pro uses <strong>AES-GCM 256-bit Web Crypto API authenticated encryption</strong> to protect exported JSON files against manual file modification.
+            </p>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                <strong>Proctoring Lock:</strong> Real-time browser tab visibility and window state detection are enforced throughout active testing. Minimizing or switching away from the tab immediately terminates the exam.
+            </p>
+            <button onclick="document.getElementById('modalSecurityNotice').classList.add('hidden')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl">
+                I Understand
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APPLICATION ARCHITECTURE -->
+    <script>
+        /**
+         * ====================================================================
+         * MODULE 1: TOAST NOTIFICATION UTILITY
+         * ====================================================================
+         */
+        const ToastModule = {
+            show(message, type = 'info', duration = 3500) {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                
+                const bgColors = {
+                    success: 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200',
+                    error: 'bg-rose-950/90 border-rose-500/50 text-rose-200',
+                    warning: 'bg-amber-950/90 border-amber-500/50 text-amber-200',
+                    info: 'bg-slate-900/90 border-indigo-500/50 text-indigo-200'
+                };
+
+                const icons = {
+                    success: 'fa-circle-check text-emerald-400',
+                    error: 'fa-circle-xmark text-rose-400',
+                    warning: 'fa-triangle-exclamation text-amber-400',
+                    info: 'fa-circle-info text-indigo-400'
+                };
+
+                toast.className = `pointer-events-auto p-3.5 rounded-xl border shadow-xl backdrop-blur-md flex items-center space-x-3 text-xs font-medium transition-all duration-300 transform translate-x-10 opacity-0 ${bgColors[type] || bgColors.info}`;
+                toast.innerHTML = `
+                    <i class="fa-solid ${icons[type] || icons.info} text-base"></i>
+                    <span class="flex-grow">${message}</span>
+                `;
+
+                container.appendChild(toast);
+                
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-x-10', 'opacity-0');
+                });
+
+                setTimeout(() => {
+                    toast.classList.add('translate-x-10', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 2: APP ROUTER & NAVIGATION MANAGER
+         * ====================================================================
+         */
+        const AppRouter = {
+            currentView: 'home',
+
+            navigate(viewId) {
+                document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+
+                const target = document.getElementById(`view${viewId.charAt(0).toUpperCase() + viewId.slice(1)}`) ||
+                             document.getElementById(`view${viewId.split('-').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join('')}`);
+                
+                if (target) {
+                    target.classList.remove('hidden');
+                    this.currentView = viewId;
+                    this.updateNavControls();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            },
+
+            updateNavControls() {
+                const navRight = document.getElementById('navRightControls');
+                navRight.innerHTML = '';
+
+                if (AdminAuthModule.isAuthenticated) {
+                    navRight.innerHTML = `
+                        <span class="text-xs bg-purple-500/20 text-purple-300 px-3 py-1.5 rounded-xl border border-purple-500/30 font-semibold flex items-center">
+                            <i class="fa-solid fa-user-shield mr-1.5"></i> Admin Active
+                        </span>
+                        <button onclick="AppRouter.navigate('admin-dashboard')" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 transition-colors">
+                            Dashboard
+                        </button>
+                    `;
+                } else {
+                    navRight.innerHTML = `
+                        <button onclick="AppRouter.navigate('student-setup')" class="bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-indigo-500/30 transition-all">
+                            Student Portal
+                        </button>
+                    `;
+                }
+            },
+
+            showSecurityNotice() {
+                document.getElementById('modalSecurityNotice').classList.remove('hidden');
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 3: DYNAMIC TIME-BASED PIN AUTHENTICATION (STRICT 24-HOUR FORMAT)
+         * ====================================================================
+         */
+        const AdminAuthModule = {
+            isAuthenticated: false,
+
+            getValidPins() {
+                const now = new Date();
+                const hrs24 = now.getHours();
+                const mins = now.getMinutes();
+
+                const pad = (n) => String(n).padStart(2, '0');
+
+                // Strictly 24-hour clock format (HHMM)
+                const pin24 = `${pad(hrs24)}${pad(mins)}`;
+
+                return [pin24];
+            },
+
+            handleLogin(event) {
+                event.preventDefault();
+                const inputEl = document.getElementById('adminPinInput');
+                const rawVal = inputEl.value.trim();
+                
+                const pinInput = rawVal.padStart(4, '0');
+                const validPins = this.getValidPins();
+
+                if (validPins.includes(pinInput)) {
+                    this.isAuthenticated = true;
+                    ToastModule.show('Admin authentication successful!', 'success');
+                    inputEl.value = '';
+                    AppRouter.navigate('admin-dashboard');
+                } else {
+                    ToastModule.show('Invalid PIN. Please enter key in 24-hour clock format (HHMM).', 'error');
+                    inputEl.value = '';
+                }
+            },
+
+            logout() {
+                this.isAuthenticated = false;
+                ToastModule.show('Admin session logged out.', 'info');
+                AppRouter.navigate('home');
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 4: MODULAR BULK MCQ QUESTION PARSER
+         * ====================================================================
+         */
+        const QuestionParserModule = {
+            parseText(rawText) {
+                const questions = [];
+                if (!rawText || !rawText.trim()) return questions;
+
+                const normalized = rawText.replace(/\r\n/g, '\n');
+                const qRegex = /(?:(?:Q|Question)\s*\d+[\.\)]|\d+[\.\)])\s*/gi;
+                const matches = [...normalized.matchAll(qRegex)];
+
+                if (matches.length === 0) {
+                    const blocks = normalized.split(/\n\s*\n/);
+                    blocks.forEach((block, idx) => {
+                        const parsed = this.parseSingleBlock(block, idx + 1);
+                        if (parsed) questions.push(parsed);
+                    });
+                } else {
+                    for (let i = 0; i < matches.length; i++) {
+                        const startIndex = matches[i].index;
+                        const endIndex = (i + 1 < matches.length) ? matches[i + 1].index : normalized.length;
+                        const block = normalized.substring(startIndex, endIndex).trim();
+                        const parsed = this.parseSingleBlock(block, questions.length + 1);
+                        if (parsed) questions.push(parsed);
+                    }
+                }
+
+                return questions;
+            },
+
+            parseSingleBlock(blockText, fallbackNum) {
+                const optRegex = /(?:[\(\[]?([A-Da-d])[\)\.]?)\s+(.*?)(?=(?:[\(\[]?[A-Da-d][\)\.]?\s+)|$)/gs;
+                const matches = [...blockText.matchAll(optRegex)];
+                if (matches.length < 2) return null;
+
+                const firstOptIndex = matches[0].index;
+                let qText = blockText.substring(0, firstOptIndex).trim();
+                qText = qText.replace(/^(?:(?:Q|Question)\s*\d+[\.\)]|\d+[\.\)])\s*/i, '').trim();
+
+                const optionsMap = { A: '', B: '', C: '', D: '' };
+                matches.forEach(m => {
+                    const key = m[1].toUpperCase();
+                    if (optionsMap.hasOwnProperty(key)) {
+                        optionsMap[key] = m[2].trim().replace(/\n/g, ' ');
+                    }
+                });
+
+                return {
+                    id: 'q_' + Math.random().toString(36).substr(2, 9),
+                    num: fallbackNum,
+                    question: qText || 'Untitled Question',
+                    options: [
+                        optionsMap.A || 'Option A',
+                        optionsMap.B || 'Option B',
+                        optionsMap.C || 'Option C',
+                        optionsMap.D || 'Option D'
+                    ],
+                    correctAnswer: 0
+                };
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 5: ADMIN QUESTION & QUIZ AUTHORING MANAGER
+         * ====================================================================
+         */
+        const AdminManagerModule = {
+            questions: [],
+            isExporting: false,
+
+            init() {
+                this.questions = [
+                    {
+                        id: 'q_sample_1',
+                        num: 1,
+                        question: 'What is the capital city of India?',
+                        options: ['New Delhi', 'Mumbai', 'Kolkata', 'Chennai'],
+                        correctAnswer: 0
+                    },
+                    {
+                        id: 'q_sample_2',
+                        num: 2,
+                        question: 'Which element has the chemical symbol "O"?',
+                        options: ['Gold', 'Oxygen', 'Osmium', 'Hydrogen'],
+                        correctAnswer: 1
+                    }
+                ];
+                this.renderQuestions();
+            },
+
+            renderQuestions() {
+                const container = document.getElementById('adminQuestionsList');
+                document.getElementById('qCountBadge').innerText = this.questions.length;
+                container.innerHTML = '';
+
+                if (this.questions.length === 0) {
+                    container.innerHTML = `
+                        <div class="glass-panel p-8 text-center rounded-2xl border border-slate-800 text-slate-500">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                            <p class="text-xs">No questions loaded yet. Use Bulk Parser or Add Manual Question.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.questions.forEach((q, qIndex) => {
+                    q.num = qIndex + 1;
+                    const card = document.createElement('div');
+                    card.className = "glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 relative group";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
+                            <span class="text-xs font-bold text-indigo-400">Question #${q.num}</span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="AdminManagerModule.duplicateQuestion(${qIndex})" title="Duplicate" class="text-slate-400 hover:text-indigo-400 text-xs px-1.5 py-1">
+                                    <i class="fa-solid fa-clone"></i>
+                                </button>
+                                <button onclick="AdminManagerModule.moveQuestion(${qIndex}, -1)" ${qIndex === 0 ? 'disabled class="opacity-30"' : 'class="text-slate-400 hover:text-white text-xs px-1.5 py-1"'}>
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                                <button onclick="AdminManagerModule.moveQuestion(${qIndex}, 1)" ${qIndex === this.questions.length - 1 ? 'disabled class="opacity-30"' : 'class="text-slate-400 hover:text-white text-xs px-1.5 py-1"'}>
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </button>
+                                <button onclick="AdminManagerModule.deleteQuestion(${qIndex})" title="Delete" class="text-slate-400 hover:text-rose-400 text-xs px-1.5 py-1">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Question Statement</label>
+                            <input type="text" value="${this.escapeHtml(q.question)}" onchange="AdminManagerModule.updateQuestionText(${qIndex}, this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            ${q.options.map((opt, optIndex) => `
+                                <div class="flex items-center space-x-2 bg-slate-900/60 p-1.5 rounded-xl border ${q.correctAnswer === optIndex ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-slate-800'}">
+                                    <input type="radio" name="correct_${q.id}" ${q.correctAnswer === optIndex ? 'checked' : ''} onchange="AdminManagerModule.setCorrectAnswer(${qIndex}, ${optIndex})" class="text-emerald-500 focus:ring-0">
+                                    <span class="text-[10px] font-bold text-slate-500">${String.fromCharCode(65 + optIndex)}.</span>
+                                    <input type="text" value="${this.escapeHtml(opt)}" onchange="AdminManagerModule.updateOptionText(${qIndex}, ${optIndex}, this.value)" class="w-full bg-transparent text-xs text-slate-200 focus:outline-none">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            escapeHtml(str) {
+                return (str || '').replace(/"/g, '&quot;');
+            },
+
+            shuffleQuestions() {
+                if (this.questions.length < 2) {
+                    ToastModule.show('Need at least 2 questions to shuffle.', 'warning');
+                    return;
+                }
+                for (let i = this.questions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.questions[i], this.questions[j]] = [this.questions[j], this.questions[i]];
+                }
+                this.renderQuestions();
+                ToastModule.show('Questions shuffled successfully!', 'success');
+            },
+
+            handleImportQuiz(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        const decrypted = await QuizCryptoModule.decryptPayload(json);
+
+                        if (decrypted.questions && Array.isArray(decrypted.questions)) {
+                            this.questions = decrypted.questions;
+                            this.renderQuestions();
+
+                            if (decrypted.metadata) {
+                                if (decrypted.metadata.title) document.getElementById('cfgQuizTitle').value = decrypted.metadata.title;
+                                if (decrypted.metadata.subject) document.getElementById('cfgSubject').value = decrypted.metadata.subject;
+                                if (decrypted.metadata.targetClass) document.getElementById('cfgClass').value = decrypted.metadata.targetClass;
+                                if (decrypted.metadata.stdDurationMins) document.getElementById('cfgStdDuration').value = decrypted.metadata.stdDurationMins;
+                                if (decrypted.metadata.timePerQSecs) document.getElementById('cfgTimePerQ').value = decrypted.metadata.timePerQSecs;
+                                if (decrypted.metadata.maxAttempts) document.getElementById('cfgMaxAttempts').value = decrypted.metadata.maxAttempts;
+                            }
+
+                            ToastModule.show(`Loaded ${decrypted.questions.length} questions from JSON file!`, 'success');
+                        } else {
+                            ToastModule.show('JSON file format is invalid.', 'error');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        ToastModule.show('Failed to decrypt/parse JSON file.', 'error');
+                    } finally {
+                        event.target.value = '';
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            parseBulkText() {
+                const text = document.getElementById('bulkInputArea').value;
+                const parsed = QuestionParserModule.parseText(text);
+                if (parsed.length === 0) {
+                    ToastModule.show('No valid MCQ structures recognized in text input.', 'warning');
+                    return;
+                }
+                this.questions = [...this.questions, ...parsed];
+                this.renderQuestions();
+                document.getElementById('bulkInputArea').value = '';
+                ToastModule.show(`Successfully added ${parsed.length} questions!`, 'success');
+            },
+
+            addNewQuestion() {
+                this.questions.push({
+                    id: 'q_' + Math.random().toString(36).substr(2, 9),
+                    num: this.questions.length + 1,
+                    question: 'New Question Title',
+                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                    correctAnswer: 0
+                });
+                this.renderQuestions();
+            },
+
+            updateQuestionText(idx, val) { this.questions[idx].question = val; },
+            updateOptionText(idx, optIdx, val) { this.questions[idx].options[optIdx] = val; },
+            setCorrectAnswer(idx, optIdx) { this.questions[idx].correctAnswer = optIdx; this.renderQuestions(); },
+            duplicateQuestion(idx) {
+                const dup = JSON.parse(JSON.stringify(this.questions[idx]));
+                dup.id = 'q_' + Math.random().toString(36).substr(2, 9);
+                this.questions.splice(idx + 1, 0, dup);
+                this.renderQuestions();
+            },
+            deleteQuestion(idx) {
+                this.questions.splice(idx, 1);
+                this.renderQuestions();
+            },
+            moveQuestion(idx, dir) {
+                const newIdx = idx + dir;
+                if (newIdx < 0 || newIdx >= this.questions.length) return;
+                const temp = this.questions[idx];
+                this.questions[idx] = this.questions[newIdx];
+                this.questions[newIdx] = temp;
+                this.renderQuestions();
+            },
+            clearAllQuestions() {
+                if (confirm('Are you sure you want to delete all questions?')) {
+                    this.questions = [];
+                    this.renderQuestions();
+                }
+            },
+
+            async exportQuiz() {
+                if (this.isExporting) return;
+
+                const title = document.getElementById('cfgQuizTitle').value.trim();
+                const subject = document.getElementById('cfgSubject').value.trim();
+                const targetClass = document.getElementById('cfgClass').value;
+
+                if (!title) return ToastModule.show('Please enter a Quiz Title.', 'error');
+                if (this.questions.length === 0) return ToastModule.show('Cannot export empty quiz. Add questions first.', 'error');
+
+                this.isExporting = true;
+
+                const payloadData = {
+                    metadata: {
+                        title: title,
+                        subject: subject,
+                        targetClass: targetClass,
+                        stdDurationMins: parseInt(document.getElementById('cfgStdDuration').value) || 10,
+                        timePerQSecs: parseInt(document.getElementById('cfgTimePerQ').value) || 15,
+                        maxAttempts: parseInt(document.getElementById('cfgMaxAttempts').value) || 3,
+                        createdAt: new Date().toISOString()
+                    },
+                    questions: this.questions
+                };
+
+                try {
+                    const encryptedExportObj = await QuizCryptoModule.encryptPayload(payloadData);
+                    const blob = new Blob([JSON.stringify(encryptedExportObj, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Exact required filename format
+                    const exactFileName = "Quiz Master Questions.json";
+
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = exactFileName;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    URL.revokeObjectURL(url);
+
+                    ToastModule.show(`Protected Quiz exported as ${exactFileName}`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    ToastModule.show('Encryption export failed.', 'error');
+                } finally {
+                    this.isExporting = false;
+                }
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 6: AUTHENTICATED AES-GCM ENCRYPTION & DECRYPTION (WEB CRYPTO)
+         * ====================================================================
+         */
+        const QuizCryptoModule = {
+            APP_SALT_SEED: "QuizForgePro_AES_GCM_2026_SecureKeySeed",
+
+            async deriveKey() {
+                const enc = new TextEncoder();
+                const keyMaterial = await window.crypto.subtle.importKey(
+                    "raw",
+                    enc.encode(this.APP_SALT_SEED),
+                    "PBKDF2",
+                    false,
+                    ["deriveKey"]
+                );
+
+                return await window.crypto.subtle.deriveKey(
+                    {
+                        name: "PBKDF2",
+                        salt: enc.encode("StaticAppSalt_992831"),
+                        iterations: 100000,
+                        hash: "SHA-256"
+                    },
+                    keyMaterial,
+                    { name: "AES-GCM", length: 256 },
+                    false,
+                    ["encrypt", "decrypt"]
+                );
+            },
+
+            async encryptPayload(dataObj) {
+                const key = await this.deriveKey();
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const enc = new TextEncoder();
+                const encodedData = enc.encode(JSON.stringify(dataObj));
+
+                const encryptedContent = await window.crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    encodedData
+                );
+
+                return {
+                    format: "QUIZFORGE_PROTECTED_PACKAGE",
+                    version: "2.0.0",
+                    iv: Array.from(iv),
+                    payload: Array.from(new Uint8Array(encryptedContent)),
+                    integrityCheck: "SHA256_GCM_AUTHENTICATED"
+                };
+            },
+
+            async decryptPayload(packageObj) {
+                if (!packageObj || packageObj.format !== "QUIZFORGE_PROTECTED_PACKAGE") {
+                    throw new Error("Invalid file schema or unsupported file version.");
+                }
+
+                const key = await this.deriveKey();
+                const iv = new Uint8Array(packageObj.iv);
+                const payload = new Uint8Array(packageObj.payload);
+
+                const decryptedContent = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    payload
+                );
+
+                const dec = new TextDecoder();
+                return JSON.parse(dec.decode(decryptedContent));
+            }
+        };
+
+        /**
+         * ====================================================================
+         * MODULE 7: STUDENT SETUP & QUIZ FILE LOADER
+         * ====================================================================
+         */
+        const StudentQuizModule = {
+            loadedQuizData: null,
+            studentInfo: { name: '', class: '' },
+            selectedMode: 'STANDARD',
+
+            async handleEmbedFetch() {
+                const statusBox = document.getElementById('fileUploadStatus');
+                statusBox.className = "text-xs p-3 rounded-xl border flex items-center space-x-2 bg-slate-900/90 border-indigo-500/50 text-indigo-300";
+                statusBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Fetching protected JSON file...</span>`;
+
+                const embedUrl = "https://raw.githubusercontent.com/gouranganitai5/QuizMaster/refs/heads/main/Quiz%20Master%20Questions.json";
+                try {
+                    const response = await fetch(embedUrl);
+                    if (!response.ok) throw new Error("Failed to download embedded file.");
+                    const json = await response.json();
+                    const decrypted = await QuizCryptoModule.decryptPayload(json);
+                    
+                    this.loadedQuizData = decrypted;
+                    
+                    statusBox.className = "text-xs p-3 rounded-xl border flex items-center space-x-2 bg-emerald-950/50 border-emerald-500/50 text-emerald-300";
+                    statusBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>✓ Protected JSON file uploaded successfully (${decrypted.questions.length} questions)</span>`;
+                    
+                    const modeCard = document.getElementById('modeSelectionCard');
+                    modeCard.classList.remove('opacity-50', 'pointer-events-none');
+                    
+                    document.getElementById('stdModeDesc').innerText = `Full quiz time: ${decrypted.metadata.stdDurationMins} minutes.`;
+                    document.getElementById('timeModeDesc').innerText = `Per question time: ${decrypted.metadata.timePerQSecs} seconds.`;
+
+                    this.checkSetupReady();
+                    ToastModule.show('Protected JSON file uploaded successfully!', 'success');
+                } catch (err) {
+                    console.error(err);
+                    this.loadedQuizData = null;
+                    statusBox.className = "text-xs p-3 rounded-xl border flex items-center space-x-2 bg-rose-950/50 border-rose-500/50 text-rose-300";
+                    statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <span>✕ Unable to upload file directly. Please use manual upload below.</span>`;
+                    this.checkSetupReady();
+                    ToastModule.show('Failed to fetch file from link. Use manual upload.', 'error');
+                }
+            },
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                const statusBox = document.getElementById('fileUploadStatus');
+                statusBox.className = "hidden text-xs p-3 rounded-xl border flex items-center space-x-2";
+
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        const decrypted = await QuizCryptoModule.decryptPayload(json);
+                        
+                        this.loadedQuizData = decrypted;
+                        
+                        statusBox.className = "text-xs p-3 rounded-xl border flex items-center space-x-2 bg-emerald-950/50 border-emerald-500/50 text-emerald-300";
+                        statusBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>✓ Quiz file loaded & decrypted successfully (${decrypted.questions.length} questions)</span>`;
+                        
+                        const modeCard = document.getElementById('modeSelectionCard');
+                        modeCard.classList.remove('opacity-50', 'pointer-events-none');
+                        
+                        document.getElementById('stdModeDesc').innerText = `Full quiz time: ${decrypted.metadata.stdDurationMins} minutes.`;
+                        document.getElementById('timeModeDesc').innerText = `Per question time: ${decrypted.metadata.timePerQSecs} seconds.`;
+
+                        this.checkSetupReady();
+                    } catch (err) {
+                        console.error(err);
+                        this.loadedQuizData = null;
+                        statusBox.className = "text-xs p-3 rounded-xl border flex items-center space-x-2 bg-rose-950/50 border-rose-500/50 text-rose-300";
+                        statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <span>✕ Invalid or corrupted quiz file. Upload original file provided by teacher.</span>`;
+                        this.checkSetupReady();
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            validateStudentName(name) {
+                if (!name || name.trim().length < 2) return false;
+                const nameRegex = /^[^\d!@#$%^&*()_+=\[\]{};:"\\|,.<>/?]+$/u;
+                return nameRegex.test(name.trim());
+            },
+
+            checkSetupReady() {
+                const name = document.getElementById('studentNameInput').value;
+                const cls = document.getElementById('studentClassSelect').value;
+                const btn = document.getElementById('btnProceedToStart');
+
+                if (this.validateStudentName(name) && cls && this.loadedQuizData) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            },
+
+            confirmAndReady() {
+                const name = document.getElementById('studentNameInput').value.trim();
+                const cls = document.getElementById('studentClassSelect').value;
+
+                if (!this.validateStudentName(name)) {
+                    return ToastModule.show('Please enter a valid human-readable name without digits.', 'error');
+                }
+
+                this.studentInfo = { name, class: cls };
+                const modeRadios = document.getElementsByName('quizModeChoice');
+                for (let r of modeRadios) { if (r.checked) this.selectedMode = r.value; }
+
+                document.getElementById('confirmStudentName').innerText = name;
+                document.getElementById('confirmStudentClass').innerText = cls;
+                document.getElementById('confirmQuizTitle').innerText = this.loadedQuizData.metadata.title;
+                document.getElementById('confirmQCount').innerText = this.loadedQuizData.questions.length;
+                document.getElementById('confirmQuizMode').innerText = this.selectedMode === 'STANDARD' ? 'Standard MCQ' : 'Time-Based MCQ';
+                document.getElementById('confirmTimingRule').innerText = this.selectedMode === 'STANDARD' ? 
+                    `${this.loadedQuizData.metadata.stdDurationMins} Mins Total` : `${this.loadedQuizData.metadata.timePerQSecs} Secs / Question`;
+                document.getElementById('confirmMaxAttempts').innerText = `${this.loadedQuizData.metadata.maxAttempts} Attempts`;
+
+                document.getElementById('modalConfirmation').classList.remove('hidden');
+            },
+
+            closeConfirmationModal() {
+                document.getElementById('modalConfirmation').classList.add('hidden');
+            },
+
+            startQuizExecution() {
+                this.closeConfirmationModal();
+                QuizEngineModule.initializeQuizSession(this.loadedQuizData, this.studentInfo, this.selectedMode);
+                AppRouter.navigate('live-quiz');
+            }
+        };
+
+        document.getElementById('studentNameInput').addEventListener('input', () => StudentQuizModule.checkSetupReady());
+        document.getElementById('studentClassSelect').addEventListener('change', () => StudentQuizModule.checkSetupReady());
+
+        /**
+         * ====================================================================
+         * MODULE 8: CORE QUIZ ENGINE, TIMER, PROCTORING & ATTEMPT TRACKER
+         * ====================================================================
+         */
+        const QuizEngineModule = {
+            quizPackage: null,
+            studentInfo: null,
+            mode: 'STANDARD',
+            
+            activeQuestionsPool: [],
+            currentQIndex: 0,
+            selectedOptionIndex: null,
+            isAnswerSubmitted: false,
+            
+            attemptNumber: 1,
+            maxAttempts: 3,
+            attemptHistory: [],
+            allAttemptsLog: [],
+            
+            timerInterval: null,
+            secondsRemaining: 0,
+
+            // Proctoring Control Flag & Confetti Animation Timer Reference
+            isQuizActive: false,
+            confettiInterval: null,
+
+            initProctoringListeners() {
+                const handleProctoringViolation = () => {
+                    if (!this.isQuizActive) return;
+                    this.terminateQuizDueToViolation();
+                };
+
+                window.addEventListener('visibilitychange', () => {
+                    if (document.hidden) handleProctoringViolation();
+                });
+
+                window.addEventListener('blur', () => {
+                    handleProctoringViolation();
+                });
+            },
+
+            terminateQuizDueToViolation() {
+                this.isQuizActive = false;
+                clearInterval(this.timerInterval);
+
+                // Auto-fail remaining questions in current attempt
+                for (let i = this.attemptHistory.length; i < this.activeQuestionsPool.length; i++) {
+                    const q = this.activeQuestionsPool[i];
+                    this.attemptHistory.push({
+                        questionId: q.id,
+                        questionObj: q,
+                        userSelected: null,
+                        isCorrect: false,
+                        isUnanswered: true
+                    });
+                }
+
+                // Force current attempt count to max to prevent further retries
+                this.attemptNumber = this.maxAttempts;
+
+                ToastModule.show('PROCTOR VIOLATION: Tab switched, hidden, or window minimized. Quiz terminated!', 'error', 6000);
+                alert('CRITICAL SECURITY VIOLATION:\nYou left or minimized the quiz tab/window. Your quiz has been immediately terminated and locked.');
+
+                this.finishAttempt(true);
+            },
+
+            initializeQuizSession(pkg, student, mode) {
+                this.quizPackage = pkg;
+                this.studentInfo = student;
+                this.mode = mode;
+                this.attemptNumber = 1;
+                this.maxAttempts = pkg.metadata.maxAttempts || 3;
+                this.activeQuestionsPool = [...pkg.questions];
+                this.allAttemptsLog = [];
+                
+                this.startAttempt();
+            },
+
+            startAttempt() {
+                this.currentQIndex = 0;
+                this.attemptHistory = [];
+                this.isQuizActive = true;
+                
+                document.getElementById('quizModeIndicatorLabel').innerText = 
+                    this.mode === 'STANDARD' ? 'Standard Quiz Mode' : 'Time-Based Mode';
+
+                if (this.mode === 'STANDARD') {
+                    this.secondsRemaining = (this.quizPackage.metadata.stdDurationMins || 10) * 60;
+                    this.startGlobalTimer();
+                }
+
+                this.renderCurrentQuestion();
+            },
+
+            startGlobalTimer() {
+                clearInterval(this.timerInterval);
+                this.updateTimerDisplay();
+                
+                this.timerInterval = setInterval(() => {
+                    this.secondsRemaining--;
+                    this.updateTimerDisplay();
+
+                    if (this.secondsRemaining <= 0) {
+                        clearInterval(this.timerInterval);
+                        ToastModule.show('Overall quiz time expired!', 'warning');
+                        this.finishAttempt();
+                    }
+                }, 1000);
+            },
+
+            startQuestionTimer() {
+                clearInterval(this.timerInterval);
+                this.secondsRemaining = this.quizPackage.metadata.timePerQSecs || 15;
+                this.updateTimerDisplay();
+
+                this.timerInterval = setInterval(() => {
+                    this.secondsRemaining--;
+                    this.updateTimerDisplay();
+
+                    if (this.secondsRemaining <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.handleTimeExpiredForQuestion();
+                    }
+                }, 1000);
+            },
+
+            updateTimerDisplay() {
+                const mins = Math.floor(Math.max(0, this.secondsRemaining) / 60);
+                const secs = Math.max(0, this.secondsRemaining) % 60;
+                const timerEl = document.getElementById('liveQuizTimer');
+                timerEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                
+                if (this.secondsRemaining <= 10) {
+                    timerEl.classList.add('text-rose-500', 'pulse-timer');
+                } else {
+                    timerEl.classList.remove('text-rose-500', 'pulse-timer');
+                }
+            },
+
+            renderCurrentQuestion() {
+                this.isAnswerSubmitted = false;
+                this.selectedOptionIndex = null;
+
+                const q = this.activeQuestionsPool[this.currentQIndex];
+                
+                document.getElementById('quizProgressBadge').innerText = 
+                    `Question ${this.currentQIndex + 1} of ${this.activeQuestionsPool.length}`;
+
+                document.getElementById('activeQuestionText').innerText = q.question;
+
+                const feedback = document.getElementById('answerFeedbackBanner');
+                feedback.className = 'hidden p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between';
+                
+                const btn = document.getElementById('btnSubmitOrNext');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('btnSubmitOrNextText').innerText = 'Submit Answer';
+
+                const optContainer = document.getElementById('activeOptionsContainer');
+                optContainer.innerHTML = '';
+
+                q.options.forEach((optText, optIdx) => {
+                    const optBtn = document.createElement('div');
+                    optBtn.className = `option-card p-4 rounded-2xl border border-slate-700/80 bg-slate-900/60 cursor-pointer flex items-center space-x-3 text-sm`;
+                    optBtn.id = `optCard_${optIdx}`;
+                    optBtn.onclick = () => this.selectOption(optIdx);
+
+                    optBtn.innerHTML = `
+                        <div class="w-7 h-7 rounded-xl border border-slate-600 flex items-center justify-center font-bold text-xs text-slate-400 bg-slate-800" id="optBadge_${optIdx}">
+                            ${String.fromCharCode(65 + optIdx)}
+                        </div>
+                        <span class="text-slate-200 flex-grow font-medium">${optText}</span>
+                    `;
+                    optContainer.appendChild(optBtn);
+                });
+
+                if (this.mode === 'TIME_BASED') {
+                    this.startQuestionTimer();
+                }
+            },
+
+            selectOption(optIdx) {
+                if (this.isAnswerSubmitted) return;
+
+                this.selectedOptionIndex = optIdx;
+
+                for (let i = 0; i < 4; i++) {
+                    const card = document.getElementById(`optCard_${i}`);
+                    const badge = document.getElementById(`optBadge_${i}`);
+                    if (card) {
+                        if (i === optIdx) {
+                            card.className = "option-card p-4 rounded-2xl border-2 border-indigo-500 bg-indigo-950/30 cursor-pointer flex items-center space-x-3 text-sm";
+                            badge.className = "w-7 h-7 rounded-xl border border-indigo-400 flex items-center justify-center font-bold text-xs text-white bg-indigo-600";
+                        } else {
+                            card.className = "option-card p-4 rounded-2xl border border-slate-700/80 bg-slate-900/60 cursor-pointer flex items-center space-x-3 text-sm";
+                            badge.className = "w-7 h-7 rounded-xl border border-slate-600 flex items-center justify-center font-bold text-xs text-slate-400 bg-slate-800";
+                        }
+                    }
+                }
+
+                const btn = document.getElementById('btnSubmitOrNext');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            },
+
+            handleNextClick() {
+                if (!this.isAnswerSubmitted) {
+                    this.submitAnswer();
+                } else {
+                    if (this.currentQIndex + 1 < this.activeQuestionsPool.length) {
+                        this.currentQIndex++;
+                        this.renderCurrentQuestion();
+                    } else {
+                        this.finishAttempt();
+                    }
+                }
+            },
+
+            submitAnswer() {
+                this.isAnswerSubmitted = true;
+                if (this.mode === 'TIME_BASED') clearInterval(this.timerInterval);
+
+                const q = this.activeQuestionsPool[this.currentQIndex];
+                const isCorrect = (this.selectedOptionIndex === q.correctAnswer);
+
+                this.attemptHistory.push({
+                    questionId: q.id,
+                    questionObj: q,
+                    userSelected: this.selectedOptionIndex,
+                    isCorrect: isCorrect,
+                    isUnanswered: false
+                });
+
+                const feedbackBanner = document.getElementById('answerFeedbackBanner');
+                const feedbackText = document.getElementById('feedbackText');
+                feedbackBanner.classList.remove('hidden');
+
+                if (isCorrect) {
+                    feedbackBanner.classList.add('bg-emerald-950/80', 'border-emerald-500/50', 'text-emerald-200');
+                    feedbackText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i> <span>✓ Correct Answer! Well done.</span>`;
+                } else {
+                    feedbackBanner.classList.add('bg-rose-950/80', 'border-rose-500/50', 'text-rose-200');
+                    const correctText = q.options[q.correctAnswer];
+                    feedbackText.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400 text-lg"></i> <span>✕ Incorrect Answer. Correct Answer: <strong>${correctText}</strong></span>`;
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    const card = document.getElementById(`optCard_${i}`);
+                    if (card) {
+                        card.classList.add('disabled', 'pointer-events-none');
+                        if (i === q.correctAnswer) {
+                            card.className = "option-card p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-950/40 flex items-center space-x-3 text-sm";
+                        } else if (i === this.selectedOptionIndex && !isCorrect) {
+                            card.className = "option-card p-4 rounded-2xl border-2 border-rose-500 bg-rose-950/40 flex items-center space-x-3 text-sm";
+                        }
+                    }
+                }
+
+                document.getElementById('btnSubmitOrNextText').innerText = 
+                    (this.currentQIndex + 1 < this.activeQuestionsPool.length) ? 'Next Question' : 'View Results';
+            },
+
+            handleTimeExpiredForQuestion() {
+                const q = this.activeQuestionsPool[this.currentQIndex];
+                this.attemptHistory.push({
+                    questionId: q.id,
+                    questionObj: q,
+                    userSelected: null,
+                    isCorrect: false,
+                    isUnanswered: true
+                });
+
+                ToastModule.show(`Time expired for Question ${this.currentQIndex + 1}!`, 'warning');
+
+                if (this.currentQIndex + 1 < this.activeQuestionsPool.length) {
+                    this.currentQIndex++;
+                    this.renderCurrentQuestion();
+                } else {
+                    this.finishAttempt();
+                }
+            },
+
+            finishAttempt(isViolated = false) {
+                this.isQuizActive = false;
+                clearInterval(this.timerInterval);
+
+                for (let i = this.attemptHistory.length; i < this.activeQuestionsPool.length; i++) {
+                    const q = this.activeQuestionsPool[i];
+                    this.attemptHistory.push({
+                        questionId: q.id,
+                        questionObj: q,
+                        userSelected: null,
+                        isCorrect: false,
+                        isUnanswered: true
+                    });
+                }
+
+                const total = this.attemptHistory.length;
+                const correctCount = this.attemptHistory.filter(h => h.isCorrect).length;
+                const wrongCount = this.attemptHistory.filter(h => !h.isCorrect && !h.isUnanswered).length;
+                const unansweredCount = this.attemptHistory.filter(h => h.isUnanswered).length;
+                const percentage = Math.round((correctCount / total) * 100) || 0;
+
+                this.allAttemptsLog.push({
+                    attemptNum: this.attemptNumber,
+                    score: `${correctCount} / ${total}`,
+                    percentage: percentage,
+                    correct: correctCount,
+                    wrong: wrongCount,
+                    unanswered: unansweredCount,
+                    details: [...this.attemptHistory]
+                });
+
+                document.getElementById('resScoreText').innerText = `${correctCount} / ${total}`;
+                document.getElementById('resPercentageText').innerText = `Percentage: ${percentage}%`;
+                document.getElementById('resCorrectCount').innerText = correctCount;
+                document.getElementById('resWrongCount').innerText = wrongCount;
+                document.getElementById('resUnansweredCount').innerText = unansweredCount;
+                document.getElementById('resStudentInfo').innerText = `${this.studentInfo.name} (${this.studentInfo.class})`;
+                document.getElementById('resAttemptTracker').innerText = `${this.attemptNumber} of ${this.maxAttempts}`;
+
+                const retryBox = document.getElementById('retryOptionsBox');
+                const finalBox = document.getElementById('finalCompletedBox');
+
+                if (isViolated) {
+                    document.getElementById('resHeaderTitle').innerText = 'Attempt Disqualified!';
+                    document.getElementById('resHeaderSub').innerText = 'Terminated due to focus/tab loss violation.';
+                    document.getElementById('attemptCompletionBanner').className = 'p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs font-bold text-center';
+                    document.getElementById('attemptCompletionBanner').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Quiz Disqualified for proctoring violation.`;
+                } else {
+                    document.getElementById('resHeaderTitle').innerText = 'Attempt Completed!';
+                    document.getElementById('resHeaderSub').innerText = 'Performance summary for this attempt.';
+                    document.getElementById('attemptCompletionBanner').className = 'p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-xl text-xs font-bold text-center';
+                    document.getElementById('attemptCompletionBanner').innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> All attempts have been completed.`;
+                }
+
+                // CHECK DIRECT PERFORMANCE CARD REDIRECT CONDITIONS:
+                // 1. All answers in this attempt are correct (correctCount === total) OR
+                // 2. All available attempts have been completed (attemptNumber >= maxAttempts) OR
+                // 3. Proctoring violation occurred
+                if (correctCount === total || this.attemptNumber >= this.maxAttempts || isViolated) {
+                    this.openOverallPerformanceCard();
+                } else {
+                    retryBox.classList.remove('hidden');
+                    finalBox.classList.add('hidden');
+                    document.getElementById('modalAttemptResult').classList.remove('hidden');
+                }
+            },
+
+            renderAllAttemptsHistory() {
+                const container = document.getElementById('allAttemptsHistoryContainer');
+                container.innerHTML = '';
+
+                this.allAttemptsLog.forEach((att) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-2";
+                    
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                            <span class="font-bold text-indigo-300">Attempt #${att.attemptNum}</span>
+                            <span class="font-bold text-slate-200">${att.score} (${att.percentage}%)</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 text-[11px] text-center pt-0.5">
+                            <span class="text-emerald-400">✓ ${att.correct} Correct</span>
+                            <span class="text-rose-400">✕ ${att.wrong} Wrong</span>
+                            <span class="text-amber-400">! ${att.unanswered} Skipped</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            openOverallPerformanceCard() {
+                document.getElementById('modalAttemptResult').classList.add('hidden');
+
+                // Calculate cumulative/best metric across all attempts
+                let bestPercentage = 0;
+                let bestScoreStr = "0 / 0";
+                
+                this.allAttemptsLog.forEach(att => {
+                    if (att.percentage > bestPercentage) {
+                        bestPercentage = att.percentage;
+                        bestScoreStr = att.score;
+                    }
+                });
+
+                document.getElementById('cardQuizTitle').innerText = this.quizPackage.metadata.title;
+                document.getElementById('cardSubjectClass').innerText = `${this.quizPackage.metadata.subject} | ${this.studentInfo.class}`;
+                document.getElementById('cardStudentName').innerText = this.studentInfo.name;
+                document.getElementById('cardIssueDate').innerText = new Date().toISOString().split('T')[0];
+                document.getElementById('cardOverallPercentage').innerText = `${bestPercentage}%`;
+                document.getElementById('cardBestScore').innerText = bestScoreStr;
+                document.getElementById('cardTotalAttempts').innerText = `${this.allAttemptsLog.length} / ${this.maxAttempts}`;
+
+                const badge = document.getElementById('cardBadgeStatus');
+                if (bestPercentage >= 80) {
+                    badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/50 bg-emerald-500/20 text-emerald-300";
+                    badge.innerText = "EXCELLENT - PASSED WITH DISTINCTION";
+                } else if (bestPercentage >= 50) {
+                    badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full border border-amber-500/50 bg-amber-500/20 text-amber-300";
+                    badge.innerText = "GOOD - PASSED";
+                } else {
+                    badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full border border-rose-500/50 bg-rose-500/20 text-rose-300";
+                    badge.innerText = "NEEDS IMPROVEMENT";
+                }
+
+                document.getElementById('modalPerformanceCard').classList.remove('hidden');
+
+                // If overall performance >= 80%, trigger continuous paper burst animation
+                if (bestPercentage >= 80 && typeof confetti === 'function') {
+                    this.startContinuousPaperBurst();
+                }
+            },
+
+            startContinuousPaperBurst() {
+                this.stopContinuousPaperBurst();
+                
+                this.confettiInterval = setInterval(() => {
+                    confetti({
+                        particleCount: 25,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }, 700);
+            },
+
+            stopContinuousPaperBurst() {
+                if (this.confettiInterval) {
+                    clearInterval(this.confettiInterval);
+                    this.confettiInterval = null;
+                }
+            },
+
+            downloadPerformanceCardImage() {
+                const target = document.getElementById('downloadablePerformanceCard');
+                if (typeof html2canvas === 'undefined') {
+                    return ToastModule.show('Image generator library is loading. Retry in a moment.', 'warning');
+                }
+
+                html2canvas(target, {
+                    backgroundColor: '#0f172a',
+                    scale: 2
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `PerformanceCard_${this.studentInfo.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    ToastModule.show('Performance Card downloaded as PNG image!', 'success');
+                }).catch(err => {
+                    console.error(err);
+                    ToastModule.show('Failed to generate image.', 'error');
+                });
+            },
+
+            closePerformanceCardModal() {
+                this.stopContinuousPaperBurst();
+                document.getElementById('modalPerformanceCard').classList.add('hidden');
+                AppRouter.navigate('home');
+            },
+
+            returnToMainPortal() {
+                document.getElementById('modalAttemptResult').classList.add('hidden');
+                AppRouter.navigate('home');
+            },
+
+            executeRetry(strategy) {
+                document.getElementById('modalAttemptResult').classList.add('hidden');
+                this.attemptNumber++;
+
+                if (strategy === 'WRONG_ONLY') {
+                    const wrongIds = new Set(this.attemptHistory.filter(h => !h.isCorrect).map(h => h.questionId));
+                    this.activeQuestionsPool = this.activeQuestionsPool.filter(q => wrongIds.has(q.id));
+                } else {
+                    this.activeQuestionsPool = [...this.quizPackage.questions];
+                }
+
+                this.startAttempt();
+            }
+        };
+
+        /**
+         * ====================================================================
+         * INITIALIZATION ENTRY POINT
+         * ====================================================================
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            AdminManagerModule.init();
+            QuizEngineModule.initProctoringListeners();
+            AppRouter.navigate('home');
+        });
+    </script>
+</body>
+</html>
