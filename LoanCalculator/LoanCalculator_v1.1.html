@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Personal Loan Calculator</title>
+  <!-- Chart.js for Animated Visuals -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Tailwind CSS for Modern UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-8">
+
+  <div class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-700 to-purple-700 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold">Personal Loan & Consolidation Calculator</h1>
+        <p class="text-indigo-200 text-sm mt-1">Calculate EMI, prepayments, expenses, and check debt consolidation profitability</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="consolidationToggleBtn" onclick="toggleConsolidationMode()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition font-medium text-sm flex items-center gap-1 shadow-md">
+          <span>🔄 Debt Consolidation Check</span>
+        </button>
+        <button id="compareToggleBtn" onclick="toggleCompareMode()" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl transition font-medium text-sm flex items-center gap-2">
+          <span>⚖️ Compare Loans</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- DEBT CONSOLIDATION ANALYZER PANEL -->
+    <div id="consolidationPanel" class="hidden bg-white p-6 rounded-2xl shadow-md border border-emerald-200 space-y-6 fade-in">
+      <div class="flex justify-between items-center border-b pb-3 border-slate-100">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Close Existing Loans (Debt Consolidation Profitability)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Add your existing active loans to check if taking a new single loan saves you money.</p>
+        </div>
+        <button onclick="addOldLoanRow()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium transition flex items-center gap-1">
+          <span>+ Add Old Loan</span>
+        </button>
+      </div>
+
+      <!-- Existing Loans List -->
+      <div class="space-y-3">
+        <div class="hidden sm:grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 px-2">
+          <span class="col-span-3">Loan Name / Bank</span>
+          <span class="col-span-3">Outstanding Principal (₹)</span>
+          <span class="col-span-2">Interest Rate (% p.a.)</span>
+          <span class="col-span-2">Remaining Months</span>
+          <span class="col-span-1">Foreclosure Charge (%)</span>
+          <span class="col-span-1 text-center">Action</span>
+        </div>
+        <div id="oldLoansList" class="space-y-2">
+          <!-- Dynamic Old Loans injected here -->
+        </div>
+      </div>
+
+      <!-- Profitability Verdict Output Card -->
+      <div id="consolidationResultCard" class="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-slate-200 pb-3">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 block">Consolidation Verdict</span>
+            <h3 id="verdictStatus" class="text-xl font-extrabold text-slate-800">Calculating...</h3>
+          </div>
+          <div class="text-left md:text-right">
+            <span class="text-xs text-slate-500 block">Total Outstanding across Old Loans</span>
+            <span id="totalOldPrincipal" class="text-lg font-bold text-slate-900">₹0</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm pt-1">
+          <div>
+            <p class="text-slate-500 text-xs">Old Loans Total Interest Remaining:</p>
+            <p id="totalOldInterest" class="font-bold text-slate-800">₹0</p>
+          </div>
+          <div>
+            <p class="text-slate-500 text-xs">Total Foreclosure Penalty Cost:</p>
+            <p id="totalForeclosureCost" class="font-bold text-amber-600">₹0</p>
+          </div>
+          <div>
+            <p class="text-slate-500 text-xs">New Consolidation Loan Interest + Fees:</p>
+            <p id="totalNewLoanCost" class="font-bold text-indigo-600">₹0</p>
+          </div>
+        </div>
+
+        <button onclick="useTotalAsNewLoan()" class="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline">
+          ➜ Set Loan Amount in main calculator equal to total required consolidation amount
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- INPUT CONTROLS (Left / Main Panel) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Calculation Strategy Toggle -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 block">Calculation Mode</label>
+          <div class="grid grid-cols-2 gap-3 p-1 bg-slate-100 rounded-xl">
+            <button id="modeGross" onclick="setCalcMode('gross')" class="py-2 px-4 rounded-lg font-medium text-sm transition bg-white shadow-sm text-indigo-600">I know my Loan Amount</button>
+            <button id="modeHand" onclick="setCalcMode('hand')" class="py-2 px-4 rounded-lg font-medium text-sm transition text-slate-600 hover:text-slate-900">I need exact Cash In Hand</button>
+          </div>
+        </div>
+
+        <!-- Primary Loan Details -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <h2 class="text-lg font-semibold text-slate-900 border-b pb-3 border-slate-100">1. Basic Loan Details</h2>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label id="loanAmtLabel" class="block text-sm font-medium text-slate-700 mb-1">Loan Amount (₹)</label>
+              <input type="number" id="loanAmount" value="500000" oninput="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Interest Rate (% p.a.)</label>
+              <input type="number" id="interestRate" step="0.1" value="10.5" oninput="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Loan Tenure (Months)</label>
+              <input type="number" id="tenureMonths" value="36" oninput="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Interest Rate Type</label>
+              <select id="rateType" onchange="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                <option value="reducing">Reducing Balance (Standard)</option>
+                <option value="fixed">Fixed Rate (Flat)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Processing Fees & Expenses Section -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <h2 class="text-lg font-semibold text-slate-900 border-b pb-3 border-slate-100">2. Processing Fees & Deductions</h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Processing Fee Type</label>
+              <select id="feeType" onchange="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                <option value="percent">Percentage (%)</option>
+                <option value="fixed">Fixed Amount (₹)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Processing Fee Value</label>
+              <input type="number" id="feeValue" step="0.1" value="1.5" oninput="calculateLoan()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Dynamic Custom Expenses -->
+          <div class="pt-2">
+            <div class="flex justify-between items-center mb-3">
+              <label class="text-sm font-medium text-slate-700">Additional Expenses (Deducted from Disbursal)</label>
+              <button onclick="addExpenseRow()" class="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-sm font-medium transition flex items-center gap-1">
+                <span>+ Add Expense</span>
+              </button>
+            </div>
+
+            <div id="expenseList" class="space-y-2">
+              <!-- Expense rows injected here dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Prepayment / Foreclosure Section -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <h2 class="text-lg font-semibold text-slate-900 border-b pb-3 border-slate-100">3. Prepayment & Early Closure</h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Prepayment Type</label>
+              <select id="prepayType" onchange="calculateLoan()" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                <option value="none">None</option>
+                <option value="oneTime">One-Time Lump Sum</option>
+                <option value="monthly">Monthly Extra Payment</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Extra Amount (₹)</label>
+              <input type="number" id="prepayAmount" value="50000" oninput="calculateLoan()" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Start at Month #</label>
+              <input type="number" id="prepayMonth" value="12" min="1" oninput="calculateLoan()" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RESULTS & SUMMARY PANEL (Right Panel) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Key Metrics Output Card -->
+        <div class="bg-indigo-900 text-white p-6 rounded-2xl shadow-xl space-y-6">
+          <h3 class="text-indigo-200 text-xs font-bold uppercase tracking-wider">Loan Summary Output</h3>
+
+          <div class="grid grid-cols-2 gap-4 border-b border-indigo-800 pb-5">
+            <div>
+              <p class="text-xs text-indigo-300">Monthly EMI</p>
+              <p id="outEmi" class="text-2xl md:text-3xl font-extrabold text-white">₹0</p>
+            </div>
+            <div>
+              <p class="text-xs text-indigo-300">In-Hand Disbursed</p>
+              <p id="outDisbursed" class="text-2xl md:text-3xl font-extrabold text-emerald-400">₹0</p>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between text-indigo-200">
+              <span>Gross Loan Amount Required:</span>
+              <span id="outGross" class="font-semibold text-white">₹0</span>
+            </div>
+            <div class="flex justify-between text-indigo-200">
+              <span>Total Processing Fees:</span>
+              <span id="outFee" class="font-semibold text-white">₹0</span>
+            </div>
+            <div class="flex justify-between text-indigo-200">
+              <span>Total Extra Expenses:</span>
+              <span id="outExpenses" class="font-semibold text-white">₹0</span>
+            </div>
+            <div class="flex justify-between text-indigo-200">
+              <span>Total Interest Payable:</span>
+              <span id="outInterest" class="font-semibold text-amber-300">₹0</span>
+            </div>
+            <div class="flex justify-between text-indigo-200 pt-2 border-t border-indigo-800">
+              <span>Total Amount Repaid:</span>
+              <span id="outTotalPayable" class="font-bold text-white text-base">₹0</span>
+            </div>
+            <div id="prepaySavingsRow" class="hidden flex justify-between text-emerald-300 pt-2 border-t border-indigo-800 font-semibold">
+              <span>Tenure Saved by Prepayment:</span>
+              <span id="outTimeSaved">0 months</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Breakdown Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="text-sm font-semibold text-slate-700">Cost Breakdown</h3>
+          <div class="relative h-56 flex justify-center">
+            <canvas id="breakdownChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- COMPARISON PANEL (Hidden by default) -->
+    <div id="comparePanel" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6 fade-in">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h2 class="text-xl font-bold text-slate-900">Loan Comparison Mode</h2>
+        <span class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium">Offer A (Current) vs Offer B</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Offer A Summary -->
+        <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-3">
+          <h4 class="font-bold text-indigo-700">Offer A (Current Parameters)</h4>
+          <p class="text-sm">EMI: <strong id="compEmiA">₹0</strong></p>
+          <p class="text-sm">Total Interest: <strong id="compInterestA">₹0</strong></p>
+          <p class="text-sm">Net Disbursed: <strong id="compDisbursedA">₹0</strong></p>
+        </div>
+
+        <!-- Offer B Input & Summary -->
+        <div class="bg-indigo-50/50 p-5 rounded-xl border border-indigo-200 space-y-4">
+          <h4 class="font-bold text-indigo-900">Offer B (Alternative Offer)</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-medium text-slate-600 block">Interest Rate (%)</label>
+              <input type="number" id="compRateB" value="12.0" step="0.1" oninput="calculateLoan()" class="w-full px-3 py-1.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-600 block">Processing Fee (%)</label>
+              <input type="number" id="compFeeB" value="1.0" step="0.1" oninput="calculateLoan()" class="w-full px-3 py-1.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="pt-2 border-t border-indigo-200 space-y-1">
+            <p class="text-sm">EMI: <strong id="compEmiB">₹0</strong></p>
+            <p class="text-sm">Total Interest: <strong id="compInterestB">₹0</strong></p>
+            <p class="text-sm text-indigo-800 font-semibold" id="compDifferenceText">Difference: ₹0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Amortization Schedule Table -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-slate-900">Amortization Schedule</h3>
+        <button onclick="toggleTable()" id="toggleTableBtn" class="text-sm text-indigo-600 hover:underline font-medium">Show Monthly Schedule</button>
+      </div>
+
+      <div id="tableContainer" class="hidden overflow-x-auto max-h-96 rounded-xl border border-slate-200">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead class="bg-slate-100 text-slate-600 sticky top-0">
+            <tr>
+              <th class="p-3">Month</th>
+              <th class="p-3">EMI Payment</th>
+              <th class="p-3">Principal</th>
+              <th class="p-3">Interest</th>
+              <th class="p-3">Prepayment</th>
+              <th class="p-3">Remaining Balance</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody" class="divide-y divide-slate-100">
+            <!-- Table rows populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let calcMode = 'gross'; // 'gross' or 'hand'
+    let expenses = [
+      { id: 1, name: 'Documentation Fee', amount: 2000 },
+      { id: 2, name: 'Loan Insurance', amount: 3500 }
+    ];
+    let oldLoans = [
+      { id: 1, name: 'Bank A Personal Loan', principal: 200000, rate: 14.5, months: 24, foreclosureFee: 3 },
+      { id: 2, name: 'Bank B Credit Card Loan', principal: 100000, rate: 18.0, months: 12, foreclosureFee: 0 }
+    ];
+    let breakdownChartInstance = null;
+
+    // Initialize App
+    window.onload = function() {
+      renderExpenses();
+      renderOldLoans();
+      initChart();
+      calculateLoan();
+    };
+
+    function setCalcMode(mode) {
+      calcMode = mode;
+      document.getElementById('modeGross').className = mode === 'gross' ? 
+        'py-2 px-4 rounded-lg font-medium text-sm transition bg-white shadow-sm text-indigo-600' : 
+        'py-2 px-4 rounded-lg font-medium text-sm transition text-slate-600 hover:text-slate-900';
+      
+      document.getElementById('modeHand').className = mode === 'hand' ? 
+        'py-2 px-4 rounded-lg font-medium text-sm transition bg-white shadow-sm text-indigo-600' : 
+        'py-2 px-4 rounded-lg font-medium text-sm transition text-slate-600 hover:text-slate-900';
+
+      document.getElementById('loanAmtLabel').innerText = mode === 'gross' ? 'Loan Amount (₹)' : 'Target Cash In Hand (₹)';
+      calculateLoan();
+    }
+
+    /* --- DYNAMIC EXPENSES --- */
+    function addExpenseRow() {
+      expenses.push({ id: Date.now(), name: 'Other Expense', amount: 1000 });
+      renderExpenses();
+      calculateLoan();
+    }
+
+    function removeExpenseRow(id) {
+      expenses = expenses.filter(e => e.id !== id);
+      renderExpenses();
+      calculateLoan();
+    }
+
+    function updateExpense(id, field, value) {
+      const exp = expenses.find(e => e.id === id);
+      if (exp) {
+        exp[field] = field === 'amount' ? parseFloat(value) || 0 : value;
+      }
+      calculateLoan();
+    }
+
+    function renderExpenses() {
+      const container = document.getElementById('expenseList');
+      container.innerHTML = '';
+      expenses.forEach(exp => {
+        const row = document.createElement('div');
+        row.className = 'flex gap-2 items-center fade-in';
+        row.innerHTML = `
+          <input type="text" value="${exp.name}" oninput="updateExpense(${exp.id}, 'name', this.value)" class="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          <input type="number" value="${exp.amount}" oninput="updateExpense(${exp.id}, 'amount', this.value)" class="w-32 px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          <button onclick="removeExpenseRow(${exp.id})" class="text-rose-500 hover:text-rose-700 px-2 text-lg font-bold">×</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /* --- OLD LOANS / DEBT CONSOLIDATION --- */
+    function addOldLoanRow() {
+      oldLoans.push({ id: Date.now(), name: 'Existing Loan', principal: 50000, rate: 12.0, months: 12, foreclosureFee: 2 });
+      renderOldLoans();
+      calculateLoan();
+    }
+
+    function removeOldLoanRow(id) {
+      oldLoans = oldLoans.filter(l => l.id !== id);
+      renderOldLoans();
+      calculateLoan();
+    }
+
+    function updateOldLoan(id, field, value) {
+      const loan = oldLoans.find(l => l.id === id);
+      if (loan) {
+        loan[field] = field === 'name' ? value : parseFloat(value) || 0;
+      }
+      calculateLoan();
+    }
+
+    function renderOldLoans() {
+      const container = document.getElementById('oldLoansList');
+      container.innerHTML = '';
+      oldLoans.forEach(loan => {
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200 fade-in';
+        row.innerHTML = `
+          <div class="sm:col-span-3">
+            <input type="text" value="${loan.name}" oninput="updateOldLoan(${loan.id}, 'name', this.value)" placeholder="Loan Name" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          </div>
+          <div class="sm:col-span-3">
+            <input type="number" value="${loan.principal}" oninput="updateOldLoan(${loan.id}, 'principal', this.value)" placeholder="Balance (₹)" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          </div>
+          <div class="sm:col-span-2">
+            <input type="number" step="0.1" value="${loan.rate}" oninput="updateOldLoan(${loan.id}, 'rate', this.value)" placeholder="Rate %" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          </div>
+          <div class="sm:col-span-2">
+            <input type="number" value="${loan.months}" oninput="updateOldLoan(${loan.id}, 'months', this.value)" placeholder="Months" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          </div>
+          <div class="sm:col-span-1">
+            <input type="number" step="0.1" value="${loan.foreclosureFee}" oninput="updateOldLoan(${loan.id}, 'foreclosureFee', this.value)" placeholder="Fee %" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm">
+          </div>
+          <div class="sm:col-span-1 text-center">
+            <button onclick="removeOldLoanRow(${loan.id})" class="text-rose-500 hover:text-rose-700 font-bold text-lg px-2">×</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function calculateConsolidationProfitability(newLoanInterest, newLoanProcessingFee) {
+      let totalOldPrincipal = 0;
+      let totalOldInterestRemaining = 0;
+      let totalForeclosurePenalty = 0;
+
+      oldLoans.forEach(loan => {
+        const p = loan.principal || 0;
+        const r = (loan.rate || 0) / 12 / 100;
+        const m = loan.months || 0;
+        const fcRate = (loan.foreclosureFee || 0) / 100;
+
+        totalOldPrincipal += p;
+        totalForeclosurePenalty += p * fcRate;
+
+        if (r > 0 && m > 0) {
+          const emi = (p * r * Math.pow(1 + r, m)) / (Math.pow(1 + r, m) - 1);
+          const totalRemainingPayable = emi * m;
+          totalOldInterestRemaining += (totalRemainingPayable - p);
+        }
+      });
+
+      const totalOldCostRemaining = totalOldInterestRemaining + totalForeclosurePenalty;
+      const totalNewExtraCost = newLoanInterest + newLoanProcessingFee;
+
+      const netSavings = totalOldCostRemaining - totalNewExtraCost;
+
+      // Render UI Result
+      document.getElementById('totalOldPrincipal').innerText = formatCurrency(totalOldPrincipal);
+      document.getElementById('totalOldInterest').innerText = formatCurrency(totalOldInterestRemaining);
+      document.getElementById('totalForeclosureCost').innerText = formatCurrency(totalForeclosurePenalty);
+      document.getElementById('totalNewLoanCost').innerText = formatCurrency(totalNewExtraCost);
+
+      const verdict = document.getElementById('verdictStatus');
+      const card = document.getElementById('consolidationResultCard');
+
+      if (oldLoans.length === 0) {
+        verdict.innerText = "Please add at least one existing loan to evaluate.";
+        verdict.className = "text-base font-medium text-slate-500";
+        card.className = "p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-3";
+      } else if (netSavings > 0) {
+        verdict.innerText = `YES, PROFITABLE! Closing old loans saves you ${formatCurrency(netSavings)}`;
+        verdict.className = "text-xl font-extrabold text-emerald-700";
+        card.className = "p-5 rounded-xl bg-emerald-50 border border-emerald-300 space-y-3";
+      } else {
+        verdict.innerText = `NOT PROFITABLE. Consolidating costs you ${formatCurrency(Math.abs(netSavings))} more`;
+        verdict.className = "text-xl font-extrabold text-rose-700";
+        card.className = "p-5 rounded-xl bg-rose-50 border border-rose-300 space-y-3";
+      }
+    }
+
+    function useTotalAsNewLoan() {
+      let totalP = oldLoans.reduce((sum, l) => sum + (l.principal || 0), 0);
+      let totalFC = oldLoans.reduce((sum, l) => sum + ((l.principal || 0) * (l.foreclosureFee || 0) / 100), 0);
+      document.getElementById('loanAmount').value = Math.round(totalP + totalFC);
+      calculateLoan();
+    }
+
+    /* --- MAIN LOAN CALCULATOR --- */
+    function calculateLoan() {
+      const inputVal = parseFloat(document.getElementById('loanAmount').value) || 0;
+      const ratePAnnum = parseFloat(document.getElementById('interestRate').value) || 0;
+      const tenureMonths = parseInt(document.getElementById('tenureMonths').value) || 1;
+      const rateType = document.getElementById('rateType').value;
+      const feeType = document.getElementById('feeType').value;
+      const feeValue = parseFloat(document.getElementById('feeValue').value) || 0;
+      
+      const prepayType = document.getElementById('prepayType').value;
+      const prepayAmount = parseFloat(document.getElementById('prepayAmount').value) || 0;
+      const prepayMonth = parseInt(document.getElementById('prepayMonth').value) || 1;
+
+      // 1. Calculate Expenses Total
+      const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // 2. Solve Gross vs In-Hand Loan Principal
+      let grossPrincipal = inputVal;
+      let processingFee = 0;
+
+      if (calcMode === 'gross') {
+        processingFee = feeType === 'percent' ? (grossPrincipal * feeValue) / 100 : feeValue;
+      } else {
+        if (feeType === 'percent') {
+          grossPrincipal = (inputVal + totalExpenses) / (1 - (feeValue / 100));
+          processingFee = (grossPrincipal * feeValue) / 100;
+        } else {
+          processingFee = feeValue;
+          grossPrincipal = inputVal + processingFee + totalExpenses;
+        }
+      }
+
+      const netDisbursed = Math.max(0, grossPrincipal - processingFee - totalExpenses);
+
+      // 3. EMI & Interest Calculation
+      let monthlyRate = (ratePAnnum / 12) / 100;
+      let baseEmi = 0;
+
+      if (rateType === 'reducing') {
+        if (monthlyRate > 0) {
+          baseEmi = (grossPrincipal * monthlyRate * Math.pow(1 + monthlyRate, tenureMonths)) / (Math.pow(1 + monthlyRate, tenureMonths) - 1);
+        } else {
+          baseEmi = grossPrincipal / tenureMonths;
+        }
+      } else {
+        const totalFlatInterest = (grossPrincipal * ratePAnnum * (tenureMonths / 12)) / 100;
+        baseEmi = (grossPrincipal + totalFlatInterest) / tenureMonths;
+      }
+
+      // 4. Generate Schedule with Prepayments
+      let balance = grossPrincipal;
+      let actualMonthsTaken = 0;
+      let schedule = [];
+      let accumulatedInterest = 0;
+
+      for (let m = 1; m <= tenureMonths; m++) {
+        if (balance <= 0) break;
+        actualMonthsTaken++;
+
+        let interestPayment = rateType === 'reducing' ? balance * monthlyRate : ((grossPrincipal * ratePAnnum * (tenureMonths / 12)) / 100) / tenureMonths;
+        let principalPayment = baseEmi - interestPayment;
+        
+        let extraPayment = 0;
+        if (prepayType === 'oneTime' && m === prepayMonth) {
+          extraPayment = prepayAmount;
+        } else if (prepayType === 'monthly' && m >= prepayMonth) {
+          extraPayment = prepayAmount;
+        }
+
+        if (principalPayment + extraPayment > balance) {
+          principalPayment = balance;
+          extraPayment = 0;
+        }
+
+        balance = balance - principalPayment - extraPayment;
+        if (balance < 0) balance = 0;
+
+        accumulatedInterest += interestPayment;
+
+        schedule.push({
+          month: m,
+          emi: baseEmi,
+          principal: principalPayment,
+          interest: interestPayment,
+          prepayment: extraPayment,
+          balance: balance
+        });
+      }
+
+      let totalInterest = accumulatedInterest;
+      const totalPayable = grossPrincipal + totalInterest;
+
+      // Update UI Output
+      document.getElementById('outEmi').innerText = formatCurrency(baseEmi);
+      document.getElementById('outDisbursed').innerText = formatCurrency(netDisbursed);
+      document.getElementById('outGross').innerText = formatCurrency(grossPrincipal);
+      document.getElementById('outFee').innerText = formatCurrency(processingFee);
+      document.getElementById('outExpenses').innerText = formatCurrency(totalExpenses);
+      document.getElementById('outInterest').innerText = formatCurrency(totalInterest);
+      document.getElementById('outTotalPayable').innerText = formatCurrency(totalPayable);
+
+      // Prepayment Savings UI
+      const prepaySavingsRow = document.getElementById('prepaySavingsRow');
+      if (prepayType !== 'none' && actualMonthsTaken < tenureMonths) {
+        prepaySavingsRow.classList.remove('hidden');
+        document.getElementById('outTimeSaved').innerText = `${tenureMonths - actualMonthsTaken} months earlier`;
+      } else {
+        prepaySavingsRow.classList.add('hidden');
+      }
+
+      renderScheduleTable(schedule);
+      updateChart(grossPrincipal, totalInterest, processingFee + totalExpenses);
+      updateComparison(grossPrincipal, tenureMonths, baseEmi, totalInterest, netDisbursed);
+      
+      // Calculate Debt Consolidation Profitability
+      calculateConsolidationProfitability(totalInterest, processingFee);
+    }
+
+    function renderScheduleTable(schedule) {
+      const tbody = document.getElementById('scheduleBody');
+      tbody.innerHTML = '';
+      schedule.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = row.prepayment > 0 ? 'bg-amber-50/60' : 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-3 border-b">${row.month}</td>
+          <td class="p-3 border-b font-medium">${formatCurrency(row.emi)}</td>
+          <td class="p-3 border-b text-slate-600">${formatCurrency(row.principal)}</td>
+          <td class="p-3 border-b text-slate-600">${formatCurrency(row.interest)}</td>
+          <td class="p-3 border-b text-emerald-600 font-medium">${row.prepayment > 0 ? formatCurrency(row.prepayment) : '-'}</td>
+          <td class="p-3 border-b font-semibold text-slate-800">${formatCurrency(row.balance)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('breakdownChart').getContext('2d');
+      breakdownChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Principal Loan', 'Total Interest', 'Fees & Expenses'],
+          datasets: [{
+            data: [1, 1, 1],
+            backgroundColor: ['#6366f1', '#f59e0b', '#ec4899'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function updateChart(principal, interest, fees) {
+      if (!breakdownChartInstance) return;
+      breakdownChartInstance.data.datasets[0].data = [principal, interest, fees];
+      breakdownChartInstance.update();
+    }
+
+    function updateComparison(grossP, tenure, emiA, interestA, disbursedA) {
+      const rateB = parseFloat(document.getElementById('compRateB').value) || 0;
+      const feeBPercent = parseFloat(document.getElementById('compFeeB').value) || 0;
+
+      const monthlyRateB = (rateB / 12) / 100;
+      let emiB = 0;
+      if (monthlyRateB > 0) {
+        emiB = (grossP * monthlyRateB * Math.pow(1 + monthlyRateB, tenure)) / (Math.pow(1 + monthlyRateB, tenure) - 1);
+      } else {
+        emiB = grossP / tenure;
+      }
+      
+      const interestB = (emiB * tenure) - grossP;
+      const diff = (interestB + (grossP * feeBPercent / 100)) - (interestA);
+
+      document.getElementById('compEmiA').innerText = formatCurrency(emiA);
+      document.getElementById('compInterestA').innerText = formatCurrency(interestA);
+      document.getElementById('compDisbursedA').innerText = formatCurrency(disbursedA);
+
+      document.getElementById('compEmiB').innerText = formatCurrency(emiB);
+      document.getElementById('compInterestB').innerText = formatCurrency(interestB);
+      
+      const diffText = document.getElementById('compDifferenceText');
+      if (diff > 0) {
+        diffText.innerText = `Offer A saves you ${formatCurrency(diff)} over Offer B`;
+        diffText.className = 'text-sm text-emerald-700 font-semibold';
+      } else {
+        diffText.innerText = `Offer B saves you ${formatCurrency(Math.abs(diff))} over Offer A`;
+        diffText.className = 'text-sm text-indigo-700 font-semibold';
+      }
+    }
+
+    function toggleConsolidationMode() {
+      const panel = document.getElementById('consolidationPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function toggleCompareMode() {
+      const panel = document.getElementById('comparePanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function toggleTable() {
+      const table = document.getElementById('tableContainer');
+      const btn = document.getElementById('toggleTableBtn');
+      if (table.classList.contains('hidden')) {
+        table.classList.remove('hidden');
+        btn.innerText = 'Hide Monthly Schedule';
+      } else {
+        table.classList.add('hidden');
+        btn.innerText = 'Show Monthly Schedule';
+      }
+    }
+
+    function formatCurrency(val) {
+      return '₹' + Math.round(val).toLocaleString('en-IN');
+    }
+  </script>
+</body>
+</html>
