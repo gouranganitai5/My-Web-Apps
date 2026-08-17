@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>MY WEB APPS - Dashboard Launcher</title>
+    <meta name="description" content="A modern, unified launcher for all your web applications on GitHub Pages.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================================
+           1. CSS VARIABLES & RESET
+           ========================================================================== */
+        :root {
+            --bg-dark: #0a0e1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-bg-hover: rgba(255, 255, 255, 0.07);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-border-hover: rgba(255, 255, 255, 0.25);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --primary-accent: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            --btn-gradient: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+            --btn-gradient-hover: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(168, 85, 247, 0.4) 100%);
+
+            --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+
+            --shadow-subtle: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            --shadow-hover: 0 20px 40px -15px rgba(99, 102, 241, 0.3);
+            --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            min-height: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Focus Ring Accessibility */
+        :focus-visible {
+            outline: 2px solid var(--primary-accent);
+            outline-offset: 4px;
+        }
+
+        /* ==========================================================================
+           2. BACKGROUND & AMBIENT GLOW
+           ========================================================================== */
+        .ambient-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.35;
+            animation: floatOrb 20s infinite alternate ease-in-out;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: #6366f1;
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 450px;
+            height: 450px;
+            background: #a855f7;
+            bottom: -150px;
+            right: -100px;
+            animation-delay: -5s;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: #ec4899;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -10s;
+            opacity: 0.2;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 50px) scale(1.1); }
+            100% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        /* ==========================================================================
+           3. CONTAINER & HEADER
+           ========================================================================== */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem 4rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .main-title {
+            font-size: clamp(2.25rem, 5vw, 3.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.75rem;
+            line-height: 1.15;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 500px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fadeIn 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* ==========================================================================
+           4. APP GRID & CARDS
+           ========================================================================== */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: auto;
+        }
+
+        /* Responsive Grid Breakdown */
+        @media (min-width: 640px) {
+            .apps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .apps-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.75rem;
+            }
+        }
+
+        .app-card {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-subtle);
+            transition: var(--transition-smooth);
+            overflow: hidden;
+            cursor: pointer;
+            
+            /* Animation state */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Staggered Delay for Entrance Animation */
+        .app-card:nth-child(1) { animation-delay: 0.2s; }
+        .app-card:nth-child(2) { animation-delay: 0.3s; }
+        .app-card:nth-child(3) { animation-delay: 0.4s; }
+        .app-card:nth-child(4) { animation-delay: 0.5s; }
+        .app-card:nth-child(5) { animation-delay: 0.6s; }
+        .app-card:nth-child(6) { animation-delay: 0.7s; }
+
+        /* Hover & Tap States */
+        .app-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            background: var(--card-bg-hover);
+            border-color: var(--card-border-hover);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .app-card:active {
+            transform: translateY(-2px) scale(0.99);
+            transition: transform 0.1s ease;
+        }
+
+        /* Interactive Card Shine Effect */
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.05),
+                transparent
+            );
+            transition: 0.5s;
+            pointer-events: none;
+        }
+
+        .app-card:hover::before {
+            left: 100%;
+        }
+
+        .card-icon-wrapper {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1.25rem;
+            transition: var(--transition-smooth);
+        }
+
+        .app-card:hover .card-icon-wrapper {
+            transform: scale(1.1) rotate(3deg);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+            letter-spacing: -0.01em;
+            word-break: break-word; /* Safe handling for long titles */
+        }
+
+        .card-description {
+            font-size: 0.925rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.75rem;
+            flex-grow: 1;
+            line-height: 1.5;
+        }
+
+        .card-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: var(--btn-gradient);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            transition: var(--transition-smooth);
+            margin-top: auto;
+        }
+
+        .card-action .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .app-card:hover .card-action {
+            background: var(--btn-gradient-hover);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .app-card:hover .card-action .arrow {
+            transform: translateX(4px);
+        }
+
+        /* ==========================================================================
+           5. FOOTER
+           ========================================================================== */
+        .footer {
+            margin-top: 4rem;
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid var(--card-border);
+            animation: fadeIn 1s 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        .footer-copyright {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.35rem;
+        }
+
+        .footer-note {
+            font-size: 0.775rem;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           6. ANIMATIONS
+           ========================================================================== */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ==========================================================================
+           7. LAUNCHER VISIBILITY (gated behind login)
+           ========================================================================== */
+        #launcherContent {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #launcherContent.is-unlocked {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ==========================================================================
+           8. PIN LOGIN SCREEN
+           ========================================================================== */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 100dvh;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18), transparent 55%),
+                        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.16), transparent 55%),
+                        var(--bg-dark);
+            overflow: hidden;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+        }
+
+        .login-screen.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .login-ambient {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .login-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.4;
+            animation: floatOrb 18s infinite alternate ease-in-out;
+        }
+
+        .login-orb-1 {
+            width: 320px;
+            height: 320px;
+            background: #6366f1;
+            top: -80px;
+            right: -60px;
+        }
+
+        .login-orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #ec4899;
+            bottom: -100px;
+            left: -60px;
+            animation-delay: -7s;
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 380px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-subtle);
+            text-align: center;
+            opacity: 0;
+            transform: translateY(24px) scale(0.98);
+            animation: fadeInUp 0.7s 0.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-card.is-shaking {
+            animation: shakeCard 0.45s ease;
+            opacity: 1;
+        }
+
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+
+        .login-lock-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            margin: 0 auto 1.25rem auto;
+            border-radius: 50%;
+            background: var(--btn-gradient);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.35);
+            animation: glowPulse 2.4s ease-in-out infinite;
+        }
+
+        .login-lock-icon svg {
+            width: 1.6rem;
+            height: 1.6rem;
+            stroke: var(--text-primary);
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 18px rgba(99, 102, 241, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.45); }
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.35rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.75rem;
+        }
+
+        .login-field-label {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .pin-input {
+            width: 100%;
+            font-family: var(--font-main);
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.6em;
+            text-align: center;
+            text-indent: 0.6em;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 0.5rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .pin-input::placeholder {
+            letter-spacing: normal;
+            font-weight: 400;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .pin-input:focus {
+            border-color: var(--primary-accent);
+            background: rgba(99, 102, 241, 0.08);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .pin-input.is-error {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+        }
+
+        .login-error {
+            margin-top: 0.85rem;
+            min-height: 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #f87171;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+        }
+
+        .login-error.is-visible {
+            opacity: 1;
+        }
+
+        .login-error-emoji {
+            display: inline-block;
+            font-size: 1.3rem;
+            line-height: 1;
+            transform-origin: center;
+        }
+
+        .login-error.is-visible .login-error-emoji {
+            animation: emojiPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes emojiPop {
+            0% { transform: scale(0.4) rotate(-12deg); }
+            45% { transform: scale(1.3) rotate(10deg); }
+            65% { transform: scale(0.9) rotate(-6deg); }
+            82% { transform: scale(1.06) rotate(3deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-error.is-visible .login-error-emoji {
+                animation: none;
+            }
+        }
+
+        .unlock-btn {
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 0.85rem 1rem;
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            box-shadow: 0 10px 25px -8px rgba(99, 102, 241, 0.5);
+        }
+
+        .unlock-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px -8px rgba(168, 85, 247, 0.55);
+        }
+
+        .unlock-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        @media (max-width: 400px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .pin-input {
+                letter-spacing: 0.4em;
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= PIN LOGIN SCREEN ================= -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-ambient">
+            <div class="login-orb login-orb-1"></div>
+            <div class="login-orb login-orb-2"></div>
+        </div>
+
+        <div class="login-card" id="loginCard">
+            <div class="login-lock-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="10" width="16" height="10" rx="2"></rect>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                </svg>
+            </div>
+
+            <h1 class="login-title">MY WEB APPS</h1>
+            <p class="login-subtitle">Enter your PIN to continue</p>
+
+            <form id="loginForm" novalidate>
+                <label class="login-field-label" for="pinInput">4-digit PIN</label>
+                <input
+                    type="password"
+                    id="pinInput"
+                    class="pin-input"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    maxlength="4"
+                    placeholder="&bull;&bull;&bull;&bull;"
+                    aria-describedby="loginError"
+                    autofocus
+                >
+                <p class="login-error" id="loginError" role="alert" aria-live="polite">
+                    <span class="login-error-emoji" id="loginErrorEmoji" aria-hidden="true">😅</span>
+                    <span id="loginErrorText">&nbsp;</span>
+                </p>
+                <button type="submit" class="unlock-btn">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ambient Floating Orbs -->
+    <div class="ambient-background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container" id="launcherContent" aria-hidden="true">
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span> Single-Repo App Hub
+            </div>
+            <h1 class="main-title">MY WEB APPS</h1>
+            <p class="subtitle">All your useful tools in one place</p>
+        </header>
+
+        <!-- Applications Grid -->
+        <main class="apps-grid" role="navigation" aria-label="Applications Launcher">
+
+            <!-- App 1: Daily Expense Manager -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/Khata_DailyExpenseManager/" 
+               class="app-card" 
+               aria-label="Open Daily Expense Manager">
+                <div class="card-icon-wrapper">📒</div>
+                <h2 class="card-title">Daily Expense Manager</h2>
+                <p class="card-description">Manage daily expenses and maintain your digital khata.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- App 2: Student ID Card Builder -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/StudentIDCardGenerator/" 
+               class="app-card" 
+               aria-label="Open Student ID Card Builder">
+                <div class="card-icon-wrapper">🪪</div>
+                <h2 class="card-title">Student ID Card Builder</h2>
+                <p class="card-description">Create and generate student identity cards.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- App 3: Question Paper Builder -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/QuestionGenerator/" 
+               class="app-card" 
+               aria-label="Open Question Paper Builder">
+                <div class="card-icon-wrapper">📝</div>
+                <h2 class="card-title">Question Paper Builder</h2>
+                <p class="card-description">Build and format professional question papers.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- App 4: Loan Calculator -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/LoanCalculator/" 
+               class="app-card" 
+               aria-label="Open Loan Calculator">
+                <div class="card-icon-wrapper">💰</div>
+                <h2 class="card-title">Loan Calculator</h2>
+                <p class="card-description">Calculate EMI, interest, repayment and loan details.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- App 5: Unit Test Result Sheet Generator v7 -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/UnitTestResultSheetGenerator_v7/" 
+               class="app-card" 
+               aria-label="Open Unit Test Result Sheet Generator v7">
+                <div class="card-icon-wrapper">📋</div>
+                <h2 class="card-title">Unit Test Result Sheet Generator v7</h2>
+                <p class="card-description">Generate and manage unit test result sheets.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+            <!-- App 6: Quiz Master -->
+            <a href="https://gouranganitai5.github.io/My-Web-Apps/QuizMaster/" 
+               class="app-card" 
+               aria-label="Open Quiz Master">
+                <div class="card-icon-wrapper">📚</div>
+                <h2 class="card-title">Quiz Master</h2>
+                <p class="card-description">Create and play quizzes with an engaging interface.</p>
+                <div class="card-action">
+                    <span>Open App</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                </div>
+            </a>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-copyright">© 2026 MY WEB APPS</p>
+            <p class="footer-note">All applications are hosted on GitHub Pages.</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript for Touch Feedback Optimization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.app-card');
+            
+            cards.forEach(card => {
+                // Optimize active state on mobile touch devices
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                }, { passive: true });
+
+                card.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                }, { passive: true });
+            });
+        });
+    </script>
+
+    <!-- JavaScript for PIN Authentication Layer -->
+    <script>
+        (function () {
+            const loginScreen = document.getElementById('loginScreen');
+            const loginCard = document.getElementById('loginCard');
+            const loginForm = document.getElementById('loginForm');
+            const pinInput = document.getElementById('pinInput');
+            const loginError = document.getElementById('loginError');
+            const loginErrorText = document.getElementById('loginErrorText');
+            const launcherContent = document.getElementById('launcherContent');
+
+            // Computes the required code from the current local device time.
+            // Recomputed at the moment of each attempt so it always reflects "now".
+            function getRequiredCode() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                return h + m;
+            }
+
+            function showError() {
+                loginErrorText.textContent = "Oops! That didn't work. Please try again.";
+                pinInput.classList.add('is-error');
+                loginCard.classList.remove('is-shaking');
+                loginError.classList.remove('is-visible');
+                // Force reflow so the card shake and emoji pop animations
+                // can replay on every failed attempt, not just the first.
+                void loginCard.offsetWidth;
+                loginCard.classList.add('is-shaking');
+                loginError.classList.add('is-visible');
+                pinInput.value = '';
+                pinInput.focus();
+            }
+
+            function clearError() {
+                loginError.classList.remove('is-visible');
+                pinInput.classList.remove('is-error');
+            }
+
+            function unlock() {
+                loginScreen.classList.add('is-hidden');
+                launcherContent.classList.add('is-unlocked');
+                launcherContent.removeAttribute('aria-hidden');
+                // Remove the login screen from the accessibility tree / tab order
+                loginScreen.setAttribute('aria-hidden', 'true');
+                loginScreen.addEventListener('transitionend', function handler() {
+                    loginScreen.style.display = 'none';
+                    loginScreen.removeEventListener('transitionend', handler);
+                });
+            }
+
+            // Restrict input to digits only, max 4 characters.
+            pinInput.addEventListener('input', () => {
+                pinInput.value = pinInput.value.replace(/\D/g, '').slice(0, 4);
+                if (pinInput.value.length > 0) clearError();
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const entered = pinInput.value.trim();
+
+                if (entered.length !== 4) {
+                    showError();
+                    return;
+                }
+
+                if (entered === getRequiredCode()) {
+                    unlock();
+                } else {
+                    showError();
+                }
+            });
+
+            // Keep focus on the PIN field while the login screen is active,
+            // without breaking normal page behavior after unlock.
+            window.addEventListener('load', () => {
+                if (!launcherContent.classList.contains('is-unlocked')) {
+                    pinInput.focus();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
